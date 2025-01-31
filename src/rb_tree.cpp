@@ -1,195 +1,298 @@
-//
-// Created by Lddyss on 2025/1/30.
-//
-
 #include "rb_tree.h"
 
-void RBTree::leftRotate(Node* x) {
-    Node* y = x->right;
-    x->right = y->left;
-    if (y->left != nullptr) y->left->parent = x;
-    y->parent = x->parent;
-    if (x->parent == nullptr) this->root = y;
-    else if (x == x->parent->left) x->parent->left = y;
-    else x->parent->right = y;
-    y->left = x;
-    x->parent = y;
+template <typename Key, class Comparator>
+RBTree<Key, Comparator>::RBTree() : root(nullptr) {}
+
+template <typename Key, class Comparator>
+RBTree<Key, Comparator>::~RBTree() {
+    clear(root);
 }
 
-void RBTree::rightRotate(Node* y) {
-    Node* x = y->left;
-    y->left = x->right;
-    if (x->right != nullptr) x->right->parent = y;
-    x->parent = y->parent;
-    if (y->parent == nullptr) this->root = x;
-    else if (y == y->parent->right) y->parent->right = x;
-    else y->parent->left = x;
-    x->right = y;
-    y->parent = x;
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::rotateLeft(Node*& p, Node*& pt) {
+    Node* ptRight = pt->right;
+    pt->right = ptRight->left;
+
+    if (pt->right != nullptr) {
+        pt->right->parent = pt;
+    }
+
+    ptRight->parent = pt->parent;
+
+    if (pt->parent == nullptr) {
+        p = ptRight;
+    } else if (pt == pt->parent->left) {
+        pt->parent->left = ptRight;
+    } else {
+        pt->parent->right = ptRight;
+    }
+
+    ptRight->left = pt;
+    pt->parent = ptRight;
 }
 
-void RBTree::fixViolation(Node* z) {
-    while (z->parent && z->parent->isRed) {
-        if (z->parent == z->parent->parent->left) {
-            Node* y = z->parent->parent->right;
-            if (y && y->isRed) {
-                z->parent->isRed = false;
-                y->isRed = false;
-                z->parent->parent->isRed = true;
-                z = z->parent->parent;
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::rotateRight(Node*& p, Node*& pt) {
+    Node* ptLeft = pt->left;
+    pt->left = ptLeft->right;
+
+    if (pt->left != nullptr) {
+        pt->left->parent = pt;
+    }
+
+    ptLeft->parent = pt->parent;
+
+    if (pt->parent == nullptr) {
+        p = ptLeft;
+    } else if (pt == pt->parent->right) {
+        pt->parent->right = ptLeft;
+    } else {
+        pt->parent->left = ptLeft;
+    }
+
+    ptLeft->right = pt;
+    pt->parent = ptLeft;
+}
+
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::fixInsert(Node*& p, Node*& pt) {
+    Node* parentPt = nullptr;
+    Node* grandParentPt = nullptr;
+
+    while ((pt != p) && (pt->color != BLACK) && (pt->parent->color == RED)) {
+        parentPt = pt->parent;
+        grandParentPt = pt->parent->parent;
+
+        if (parentPt == grandParentPt->left) {
+            Node* unclePt = grandParentPt->right;
+
+            if (unclePt != nullptr && unclePt->color == RED) {
+                grandParentPt->color = RED;
+                parentPt->color = BLACK;
+                unclePt->color = BLACK;
+                pt = grandParentPt;
             } else {
-                if (z == z->parent->right) {
-                    z = z->parent;
-                    leftRotate(z);
+                if (pt == parentPt->right) {
+                    rotateLeft(p, parentPt);
+                    pt = parentPt;
+                    parentPt = pt->parent;
                 }
-                z->parent->isRed = false;
-                z->parent->parent->isRed = true;
-                rightRotate(z->parent->parent);
+
+                rotateRight(p, grandParentPt);
+                std::swap(parentPt->color, grandParentPt->color);
+                pt = parentPt;
             }
         } else {
-            Node* y = z->parent->parent->left;
-            if (y && y->isRed) {
-                z->parent->isRed = false;
-                y->isRed = false;
-                z->parent->parent->isRed = true;
-                z = z->parent->parent;
+            Node* unclePt = grandParentPt->left;
+
+            if (unclePt != nullptr && unclePt->color == RED) {
+                grandParentPt->color = RED;
+                parentPt->color = BLACK;
+                unclePt->color = BLACK;
+                pt = grandParentPt;
             } else {
-                if (z == z->parent->left) {
-                    z = z->parent;
-                    rightRotate(z);
+                if (pt == parentPt->left) {
+                    rotateRight(p, parentPt);
+                    pt = parentPt;
+                    parentPt = pt->parent;
                 }
-                z->parent->isRed = false;
-                z->parent->parent->isRed = true;
-                leftRotate(z->parent->parent);
+
+                rotateLeft(p, grandParentPt);
+                std::swap(parentPt->color, grandParentPt->color);
+                pt = parentPt;
             }
         }
     }
-    root->isRed = false;
+
+    p->color = BLACK;
 }
 
-void RBTree::insertFixup(Node* k) {
-    fixViolation(k);
-}
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::fixDelete(Node*& p, Node*& pt) {
+    while (pt != p && pt->color == BLACK) {
+        if (pt == pt->parent->left) {
+            Node* sibling = pt->parent->right;
 
-void RBTree::transplant(Node* u, Node* v) {
-    if (u->parent == nullptr) this->root = v;
-    else if (u == u->parent->left) u->parent->left = v;
-    else u->parent->right = v;
-    v->parent = u->parent;
-}
-
-void RBTree::deleteNode(Node* root, int key) {
-    Node* z = search(root, key);
-    if (z == nullptr) return;
-
-    Node* y = (z->left == nullptr) ? z : (z->right == nullptr) ? z : minValue(z->right);
-    int yOriginalColor = y->isRed;
-    Node* x = (y == nullptr) ? nullptr : (y->left ? y->left : y->right);
-
-    if (x != nullptr) x->parent = y->parent;
-
-    if (y->parent == nullptr) this->root = x;
-    else if (y == y->parent->left) y->parent->left = x;
-    else y->parent->right = x;
-
-    if (y != z) {
-        z->key = y->key;
-        z->isRed = y->isRed;
-    }
-
-    if (yOriginalColor == false) removeFixup(x);
-}
-
-void RBTree::removeFixup(Node* x) {
-    while (x != this->root && !x->isRed) {
-        if (x == x->parent->left) {
-            Node* w = x->parent->right;
-            if (w->isRed) {
-                w->isRed = false;
-                x->parent->isRed = true;
-                leftRotate(x->parent);
-                w = x->parent->right;
+            if (sibling->color == RED) {
+                sibling->color = BLACK;
+                pt->parent->color = RED;
+                rotateLeft(p, pt->parent);
+                sibling = pt->parent->right;
             }
-            if (!w->right->isRed && !w->left->isRed) {
-                w->isRed = true;
-                x = x->parent;
+
+            if (sibling->left->color == BLACK && sibling->right->color == BLACK) {
+                sibling->color = RED;
+                pt = pt->parent;
             } else {
-                if (!w->right->isRed) {
-                    rightRotate(w);
-                    w = x->parent->right;
+                if (sibling->right->color == BLACK) {
+                    sibling->left->color = BLACK;
+                    sibling->color = RED;
+                    rotateRight(p, sibling);
+                    sibling = pt->parent->right;
                 }
-                w->isRed = x->parent->isRed;
-                x->parent->isRed = false;
-                w->right->isRed = false;
-                leftRotate(x->parent);
-                x = this->root;
+
+                sibling->color = pt->parent->color;
+                pt->parent->color = BLACK;
+                sibling->right->color = BLACK;
+                rotateLeft(p, pt->parent);
+                pt = p;
             }
         } else {
-            Node* w = x->parent->left;
-            if (w->isRed) {
-                w->isRed = false;
-                x->parent->isRed = true;
-                rightRotate(x->parent);
-                w = x->parent->left;
+            Node* sibling = pt->parent->left;
+
+            if (sibling->color == RED) {
+                sibling->color = BLACK;
+                pt->parent->color = RED;
+                rotateRight(p, pt->parent);
+                sibling = pt->parent->left;
             }
-            if (!w->left->isRed && !w->right->isRed) {
-                w->isRed = true;
-                x = x->parent;
+
+            if (sibling->right->color == BLACK && sibling->left->color == BLACK) {
+                sibling->color = RED;
+                pt = pt->parent;
             } else {
-                if (!w->left->isRed) {
-                    leftRotate(w);
-                    w = x->parent->left;
+                if (sibling->left->color == BLACK) {
+                    sibling->right->color = BLACK;
+                    sibling->color = RED;
+                    rotateLeft(p, sibling);
+                    sibling = pt->parent->left;
                 }
-                w->isRed = x->parent->isRed;
-                x->parent->isRed = false;
-                w->left->isRed = false;
-                rightRotate(x->parent);
-                x = this->root;
+
+                sibling->color = pt->parent->color;
+                pt->parent->color = BLACK;
+                sibling->left->color = BLACK;
+                rotateRight(p, pt->parent);
+                pt = p;
             }
         }
     }
-    x->isRed = false;
+
+    pt->color = BLACK;
 }
 
-RBTree::Node* RBTree::minValue(Node* node) {
-    Node* current = node;
-    while (current && current->left != nullptr) current = current->left;
+template <typename Key, class Comparator>
+typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::insertBST(Node* p, Node* pt) {
+    if (p == nullptr) {
+        return pt;
+    }
+
+    if (compare(pt->key, p->key) < 0) {
+        p->left = insertBST(p->left, pt);
+        p->left->parent = p;
+    } else if (compare(pt->key, p->key) > 0) {
+        p->right = insertBST(p->right, pt);
+        p->right->parent = p;
+    }
+
+    return p;
+}
+
+template <typename Key, class Comparator>
+typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::searchTree(Node* p, const Key& key) const {
+    if (p == nullptr || compare(p->key, key) == 0) {
+        return p;
+    }
+
+    if (compare(p->key, key) < 0) {
+        return searchTree(p->right, key);
+    }
+
+    return searchTree(p->left, key);
+}
+
+template <typename Key, class Comparator>
+typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::minValueNode(Node* p) {
+    Node* current = p;
+    while (current->left != nullptr) {
+        current = current->left;
+    }
     return current;
 }
 
-RBTree::Node* RBTree::search(Node* node, int key) const {
-    while (node != nullptr && node->key != key) {
-        if (key < node->key) node = node->left;
-        else node = node->right;
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::transplant(Node*& p, Node* u, Node* v) {
+    if (u->parent == nullptr) {
+        p = v;
+    } else if (u == u->parent->left) {
+        u->parent->left = v;
+    } else {
+        u->parent->right = v;
     }
-    return node;
+
+    if (v != nullptr) {
+        v->parent = u->parent;
+    }
 }
 
-void RBTree::Insert(int key) {
-    Node* node = new Node(key);
-    Node* parent = nullptr;
-    Node* current = root;
-    while (current != nullptr) {
-        parent = current;
-        if (key < current->key) current = current->left;
-        else current = current->right;
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::clear(Node* p) {
+    if (p == nullptr) {
+        return;
     }
-    node->parent = parent;
-    if (parent == nullptr) root = node;
-    else if (key < parent->key) parent->left = node;
-    else parent->right = node;
-    insertFixup(node);
+
+    clear(p->left);
+    clear(p->right);
+    delete p;
 }
 
-bool RBTree::Remove(int key) {
-    deleteNode(root, key);
+template <typename Key, class Comparator>
+bool RBTree<Key, Comparator>::Insert(const Key& key) {
+    Node* pt = new Node(key);
+
+    root = insertBST(root, pt);
+    fixInsert(root, pt);
     return true;
 }
 
-bool RBTree::Find(int key) const {
-    return search(root, key) != nullptr;
+template <typename Key, class Comparator>
+bool RBTree<Key, Comparator>::Remove(const Key& key) {
+    Node* z = searchTree(root, key);
+    if (z == nullptr) {
+        return false;
+    }
+
+    Node* y = z;
+    Node* x;
+    Color yOriginalColor = y->color;
+
+    if (z->left == nullptr) {
+        x = z->right;
+        transplant(root, z, z->right);
+    } else if (z->right == nullptr) {
+        x = z->left;
+        transplant(root, z, z->left);
+    } else {
+        y = minValueNode(z->right);
+        yOriginalColor = y->color;
+        x = y->right;
+
+        if (y->parent == z) {
+            if (x != nullptr) {
+                x->parent = y;
+            }
+        } else {
+            transplant(root, y, y->right);
+            y->right = z->right;
+            y->right->parent = y;
+        }
+
+        transplant(root, z, y);
+        y->left = z->left;
+        y->left->parent = y;
+        y->color = z->color;
+    }
+
+    delete z;
+
+    if (yOriginalColor == BLACK) {
+        fixDelete(root, x);
+    }
+
+    return true;
 }
 
-RBTree::~RBTree() {
-    // Implement destructor to delete all nodes
+template <typename Key, class Comparator>
+bool RBTree<Key, Comparator>::Find(const Key& key) const {
+    Node* result = searchTree(root, key);
+    return result != nullptr;
 }

@@ -2,30 +2,41 @@
 // Created by Lddyss on 2025/1/30.
 //
 
-#ifndef CODE_HASH_TABLE_H
-#define CODE_HASH_TABLE_H
+#ifndef HASH_TABLE_H
+#define HASH_TABLE_H
 
 #include "ovo_set.h"
-#include <iostream>
-#include <vector>
 #include <list>
+#include <cstring>
+#include <vector>
 
-class HashTable : public OvOSet {
+template <typename Key, class Comparator>
+class HashTable : public OvOSet<Key, Comparator> {
 private:
-    struct Bucket {
-        std::list<int> keys;
+    struct hashNode {
+        Key k_;
+        size_t hash_;
+        hashNode* next_;
+    };
+    struct hashBucket {
+        hashNode head;
     };
 
-    std::vector<Bucket> table;
-    size_t size;
+    size_t ele_num_, bucket_num_;
+    Comparator compare_;
+    hashBucket* bucket_;
 
-    size_t hashFunction(int key) const;
+    size_t getHash(const Key &key) const;
+    hashNode* findPointer(const Key &key, size_t hash) const;
+    void resize();
 
 public:
-    HashTable(size_t initialSize = 101) : size(initialSize), table(size) {}
-    void Insert(int key) override;
-    bool Remove(int key) override;
-    bool Find(int key) const override;
+    explicit HashTable(size_t bucket_num = 128);
+    bool Insert(const Key &key) override;
+    bool Remove(const Key &key) override;
+    bool Find(const Key &key) const override;
 };
 
-#endif //CODE_HASH_TABLE_H
+template class HashTable<int, std::less<>>;
+
+#endif // HASH_TABLE_H

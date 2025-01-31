@@ -2,42 +2,52 @@
 // Created by Lddyss on 2025/1/30.
 //
 
-#ifndef CODE_SKIP_LIST_H
-#define CODE_SKIP_LIST_H
+#ifndef SKIP_LIST_H
+#define SKIP_LIST_H
 
-#include "ovo_set.h"
-#include <iostream>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 
-class SkipList : public OvOSet {
+template <typename Key, class Comparator>
+class SkipList {
 private:
-    struct Node {
-        int key;
-        std::vector<Node*> forward;
-        Node(int k) : key(k) {}
+    struct SkipListNode {
+        Key value;
+        std::vector<SkipListNode*> forward; // 指向下一层节点的指针数组
+
+        SkipListNode(const Key& val, int level) : value(val), forward(level + 1, nullptr) {}
     };
 
-    int level;
-    Node* head;
-    float p;
+    int maxLevel;       // 跳表的最大层数
+    int currentLevel;   // 当前跳表的层数
+    SkipListNode* header; // 头节点
+    Comparator compare; // 比较器
 
+    // 随机生成节点的层数
     int randomLevel();
-    Node* createNode(int key);
-    void insertNode(int key);
-    bool deleteNode(int key);
-    Node* findNode(int key) const;
 
 public:
-    SkipList(int maxLevel = 16, float p_ = 0.5) : level(0), head(nullptr), p(p_) {
-        head = createNode(-1);
-        for (int i = 0; i < maxLevel; ++i) head->forward.push_back(nullptr);
-    }
+    // 构造函数
+    SkipList(int maxLevel = 16);
+
+    // 析构函数
     ~SkipList();
-    void Insert(int key) override;
-    bool Remove(int key) override;
-    bool Find(int key) const override;
+
+    // 插入操作
+    bool Insert(const Key& key);
+
+    // 查找操作
+    bool Find(const Key& key) const;
+
+    // 删除操作
+    bool Remove(const Key& key);
+
+    // 打印跳表
+    void Print() const;
 };
 
-#endif //CODE_SKIP_LIST_H
+template class SkipList<int, std::less<>>;
+
+#endif // SKIP_LIST_H

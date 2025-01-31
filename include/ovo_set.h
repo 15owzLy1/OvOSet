@@ -2,19 +2,19 @@
 // Created by Lddyss on 2025/1/30.
 //
 
-// ovo_set.h
+// include/ovo_set.h
 #ifndef OVO_SET_H
 #define OVO_SET_H
+#include <cstdio>
+using std::size_t;
 
-#include <iostream>
-#include <functional>
-
+template <typename Key, class Comparator>
 class OvOSet {
 public:
-    virtual ~OvOSet() {}
-    virtual void Insert(int key) = 0;
-    virtual bool Remove(int key) = 0;
-    virtual bool Find(int key) const = 0;
+    virtual ~OvOSet() = default;
+    virtual bool Insert(const Key& key) = 0;
+    virtual bool Remove(const Key& key) = 0;
+    virtual bool Find(const Key& key) const = 0;
 };
 
 #endif // OVO_SET_H

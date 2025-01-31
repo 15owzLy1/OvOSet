@@ -1,42 +1,51 @@
 //
 // Created by Lddyss on 2025/1/30.
 //
-
-#ifndef CODE_RB_TREE_H
-#define CODE_RB_TREE_H
+#ifndef RB_TREE_H
+#define RB_TREE_H
 
 #include "ovo_set.h"
 #include <iostream>
-#include <vector>
 
-class RBTree : public OvOSet {
+enum Color { RED, BLACK };
+
+template <typename Key, class Comparator>
+class RBTree : public OvOSet<Key, Comparator> {
 private:
     struct Node {
-        int key;
+        Key key;
+        Color color;
         Node* left;
         Node* right;
         Node* parent;
-        bool isRed;
-        Node(int k, Node* p = nullptr) : key(k), left(nullptr), right(nullptr), parent(p), isRed(true) {}
+
+        Node(const Key& k, Color c = RED, Node* l = nullptr, Node* r = nullptr, Node* p = nullptr)
+                : key(k), color(c), left(l), right(r), parent(p) {}
     };
 
     Node* root;
-    void leftRotate(Node* x);
-    void rightRotate(Node* y);
-    void fixViolation(Node* z);
-    void insertFixup(Node* k);
-    void removeFixup(Node* x);
-    void transplant(Node* u, Node* v);
-    void deleteNode(Node* root, int key);
-    Node* minValue(Node* node);
-    Node* search(Node* node, int key) const;
+    Comparator compare;
+
+    void rotateLeft(Node*& root, Node*& pt);
+    void rotateRight(Node*& root, Node*& pt);
+    void fixInsert(Node*& root, Node*& pt);
+    void fixDelete(Node*& root, Node*& pt);
+    Node* insertBST(Node* root, Node* pt);
+    Node* searchTree(Node* root, const Key& key) const;
+    Node* minValueNode(Node* node);
+    void transplant(Node*& root, Node* u, Node* v);
+    void clear(Node* node);
 
 public:
-    RBTree() : root(nullptr) {}
+    RBTree();
     ~RBTree();
-    void Insert(int key) override;
-    bool Remove(int key) override;
-    bool Find(int key) const override;
+
+    bool Insert(const Key& key) override;
+    bool Remove(const Key& key) override;
+    bool Find(const Key& key) const override;
+
 };
 
-#endif //CODE_RB_TREE_H
+template class RBTree<int, std::less<>>;
+
+#endif // RB_TREE_H
