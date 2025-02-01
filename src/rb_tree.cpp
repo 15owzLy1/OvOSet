@@ -292,7 +292,7 @@ bool RBTree<Key, Comparator>::Remove(const Key& key) {
 }
 
 template <typename Key, class Comparator>
-bool RBTree<Key, Comparator>::Find(const Key& key) const {
+bool RBTree<Key, Comparator>::Contains(const Key& key) const {
     Node* result = searchTree(root, key);
     return result != nullptr;
 }

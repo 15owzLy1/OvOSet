@@ -17,18 +17,6 @@ size_t HashTable<Key, Comparator>::getHash(const Key& key) const {
 }
 
 template <typename Key, class Comparator>
-typename HashTable<Key, Comparator>::hashNode* HashTable<Key, Comparator>
-        ::findPointer(const Key &key, const size_t hash) const {
-    auto p = &bucket_[hash & (bucket_num_ - 1)].head;
-    for (; p->next_ != nullptr; p = p->next_) {
-        if (compare_(p->next_->k_, key) == 0) {
-            break;
-        }
-    }
-    return p;
-}
-
-template <typename Key, class Comparator>
 void HashTable<Key, Comparator>::resize() {
     auto new_bucket_num = bucket_num_;
     while (new_bucket_num < ele_num_) {
@@ -39,13 +27,13 @@ void HashTable<Key, Comparator>::resize() {
     // move elements to new buckets
     size_t cnt = 0;
     for (size_t i = 0; i < bucket_num_; ++i) {
-        auto p = bucket_[i].head.next_;
+        auto p = bucket_[i].head;
         while (p != nullptr) {
             auto next = p->next_;
             auto hash = p->hash_;
-            hashNode &new_h = new_bucket[hash & (new_bucket_num - 1)].head;
-            p->next_ = new_h.next_;
-            new_h.next_ = p;
+            auto new_h = &new_bucket[hash & (new_bucket_num - 1)].head;
+            p->next_ = *new_h;
+            *new_h = p;
             p = next;
             ++cnt;
         }
@@ -57,14 +45,23 @@ void HashTable<Key, Comparator>::resize() {
 }
 
 template <typename Key, class Comparator>
+typename HashTable<Key, Comparator>::hashNode**
+HashTable<Key, Comparator>::findPointer(const Key &key, const size_t hash) const {
+    auto p = &bucket_[hash & (bucket_num_ - 1)].head;
+    for (; *p != nullptr && ((*p)->hash_ != hash || compare_(key, (*p)->k_)); p = &(*p)->next_);
+    return p;
+}
+
+template <typename Key, class Comparator>
 bool HashTable<Key, Comparator>::Insert(const Key& key) {
     auto hash = getHash(key);
     auto ret = findPointer(key, hash);
-    if (ret->next_ != nullptr) {
+    auto p = *ret;
+    if (p != nullptr) {
         return false;
     }
-    auto p = new hashNode{key, hash, ret->next_};
-    ret->next_ = p;
+    auto new_p = new hashNode{key, hash, nullptr};
+    *ret = new_p;
     ++ele_num_;
     if (bucket_num_ < ele_num_) {
         resize();
@@ -76,19 +73,17 @@ template <typename Key, class Comparator>
 bool HashTable<Key, Comparator>::Remove(const Key& key) {
     auto hash = getHash(key);
     auto ret = findPointer(key, hash);
-    if (ret->next_ == nullptr) {
+    auto p = *ret;
+    if (p == nullptr) {
         return false;
     }
-    auto p = ret->next_;
-    ret->next_ = ret->next_->next_;
-    delete []p;
+    *ret = p->next_;
+    delete[] p;
     --ele_num_;
     return true;
 }
 
 template <typename Key, class Comparator>
-bool HashTable<Key, Comparator>::Find(const Key& key) const {
-    auto hash = getHash(key);
-    auto ret = findPointer(key, hash);
-    return ret->next_ != nullptr;
+bool HashTable<Key, Comparator>::Contains(const Key& key) const {
+    return *findPointer(key, getHash(key)) != nullptr;
 }

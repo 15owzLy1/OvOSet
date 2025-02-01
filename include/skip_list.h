@@ -9,28 +9,29 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include "random.h"
 
 template <typename Key, class Comparator>
 class SkipList {
 private:
     struct SkipListNode {
-        Key value;
-        std::vector<SkipListNode*> forward; // 指向下一层节点的指针数组
-
-        SkipListNode(const Key& val, int level) : value(val), forward(level + 1, nullptr) {}
+        Key k_;
+        SkipListNode* forward_[1];
     };
 
-    int maxLevel;       // 跳表的最大层数
-    int currentLevel;   // 当前跳表的层数
-    SkipListNode* header; // 头节点
-    Comparator compare; // 比较器
+    const uint16_t maxLevel_;
+    const uint16_t branchNum_;
+    Comparator compare_; // 比较器
+    uint16_t cur_level_;   // 当前跳表的层数
+    SkipListNode* header_; // 头节点
+    Random rand_;
 
     // 随机生成节点的层数
     int randomLevel();
 
 public:
     // 构造函数
-    SkipList(int maxLevel = 16);
+    SkipList(uint16_t max_level = 16, uint16_t branch_num = 4);
 
     // 析构函数
     ~SkipList();
@@ -39,7 +40,7 @@ public:
     bool Insert(const Key& key);
 
     // 查找操作
-    bool Find(const Key& key) const;
+    bool Contains(const Key& key) const;
 
     // 删除操作
     bool Remove(const Key& key);

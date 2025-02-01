@@ -14,7 +14,7 @@ public:
     virtual ~OvOSet() = default;
     virtual bool Insert(const Key& key) = 0;
     virtual bool Remove(const Key& key) = 0;
-    virtual bool Find(const Key& key) const = 0;
+    virtual bool Contains(const Key& key) const = 0;
 };
 
 #endif // OVO_SET_H

@@ -18,16 +18,16 @@ protected:
 // 测试插入和查找基础功能
 TEST_F(HashTableTest, InsertAndFind) {
     EXPECT_TRUE(ht->Insert(5));       // 插入新元素
-    EXPECT_TRUE(ht->Find(5));         // 存在元素应能找到
+    EXPECT_TRUE(ht->Contains(5));         // 存在元素应能找到
     EXPECT_FALSE(ht->Insert(5));      // 重复插入应失败
-    EXPECT_FALSE(ht->Find(42));       // 不存在的元素找不到
+    EXPECT_FALSE(ht->Contains(42));       // 不存在的元素找不到
 }
 
 // 测试删除功能
 TEST_F(HashTableTest, Remove) {
     ht->Insert(10);
     EXPECT_TRUE(ht->Remove(10));      // 删除存在的元素
-    EXPECT_FALSE(ht->Find(10));       // 确认已删除
+    EXPECT_FALSE(ht->Contains(10));       // 确认已删除
     EXPECT_FALSE(ht->Remove(99));     // 删除不存在的元素应失败
 }
 
@@ -35,10 +35,10 @@ TEST_F(HashTableTest, Remove) {
 TEST_F(HashTableTest, EdgeCases) {
     EXPECT_TRUE(ht->Insert(0));
     EXPECT_TRUE(ht->Insert(-1));
-    EXPECT_TRUE(ht->Find(0));
-    EXPECT_TRUE(ht->Find(-1));
+    EXPECT_TRUE(ht->Contains(0));
+    EXPECT_TRUE(ht->Contains(-1));
     EXPECT_TRUE(ht->Remove(-1));
-    EXPECT_FALSE(ht->Find(-1));
+    EXPECT_FALSE(ht->Contains(-1));
 }
 
 // 测试哈希表扩容（需根据实现调整阈值）
@@ -49,14 +49,14 @@ TEST_F(HashTableTest, ResizeBehavior) {
     }
     // 验证所有元素存在
     for (int i = 0; i < 2050; ++i) {
-        EXPECT_TRUE(ht->Find(i)) << "i=" << i;
+        EXPECT_TRUE(ht->Contains(i)) << "i=" << i;
     }
 }
 
 // 测试空表操作
 TEST_F(HashTableTest, EmptyTable) {
     EXPECT_FALSE(ht->Remove(0));      // 空表删除失败
-    EXPECT_FALSE(ht->Find(0));        // 空表查找失败
+    EXPECT_FALSE(ht->Contains(0));        // 空表查找失败
 }
 
 int main(int argc, char **argv) {

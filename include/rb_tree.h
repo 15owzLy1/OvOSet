@@ -42,7 +42,7 @@ public:
 
     bool Insert(const Key& key) override;
     bool Remove(const Key& key) override;
-    bool Find(const Key& key) const override;
+    bool Contains(const Key& key) const override;
 
 };
 

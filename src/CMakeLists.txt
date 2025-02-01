@@ -7,4 +7,5 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_FILES)
 
 # 创建一个静态库
-add_library(data_structures STATIC ${SRC_FILES})
+add_library(data_structures STATIC ${SRC_FILES}
+        ../include/random.h)

@@ -19,7 +19,7 @@ private:
         hashNode* next_;
     };
     struct hashBucket {
-        hashNode head;
+        hashNode* head;
     };
 
     size_t ele_num_, bucket_num_;
@@ -27,14 +27,14 @@ private:
     hashBucket* bucket_;
 
     size_t getHash(const Key &key) const;
-    hashNode* findPointer(const Key &key, size_t hash) const;
+    hashNode** findPointer(const Key &key, size_t hash) const;
     void resize();
 
 public:
     explicit HashTable(size_t bucket_num = 128);
     bool Insert(const Key &key) override;
     bool Remove(const Key &key) override;
-    bool Find(const Key &key) const override;
+    bool Contains(const Key &key) const override;
 };
 
 template class HashTable<int, std::less<>>;
