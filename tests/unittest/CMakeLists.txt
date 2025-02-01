@@ -8,8 +8,11 @@ add_executable(UnitTests ${UNIT_TEST_FILES})
 
 
 
-add_executable(HtIOTest ht_io_test.cpp)
-target_link_libraries(HtIOTest data_structures gtest gtest_main)
+add_executable(HashTableIOTest hashtable_io_test.cpp)
+target_link_libraries(HashTableIOTest data_structures gtest gtest_main)
+
+add_executable(SkipListIOTest skiplist_io_test.cpp)
+target_link_libraries(SkipListIOTest data_structures gtest gtest_main)
 
 
 # 链接 gtest 和 gtest_main

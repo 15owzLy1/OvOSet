@@ -3,68 +3,114 @@
 //
 #include "skip_list.h"
 
+template <typename Key, class Comparator>
+struct SkipList<Key, Comparator>::SkipListNode {
+    explicit SkipListNode(const Key &k) : k_(k) {}
+    explicit SkipListNode(Key &&k) : k_(std::move(k)) {}
+    Key const k_;
+    std::atomic<SkipListNode*> next_[0];
+    static SkipListNode* NewNode(const Key &k, const int level) {
+        auto node_memory = malloc(sizeof(Key) + sizeof(SkipListNode*) * level);
+        return new (node_memory) SkipListNode(k);
+    }
+    static SkipListNode* NewNode(Key &&k, const int level) {
+        auto node_memory = malloc(sizeof(Key) + sizeof(SkipListNode*) * level);
+        return new (node_memory) SkipListNode(std::move(k));
+    }
+    SkipListNode* Next(int i) {
+        assert(i >= 0);
+        return next_[i].load();
+    }
+    void SetNext(int i, SkipListNode* p) {
+        assert(i >= 0);
+        next_[i].store(p);
+    }
+    SkipListNode* unsafe_Next(int i) {
+        assert(i >= 0);
+        return next_[i].load();
+    }
+    void unsafe_SetNext(int i, SkipListNode* p) {
+        assert(i >= 0);
+        next_[i].store(p);
+    }
+};
+
 // 构造函数
 template <typename Key, class Comparator>
 SkipList<Key, Comparator>::SkipList(uint16_t max_level, uint16_t branch_num)
-    : maxLevel_(max_level), branchNum_(branch_num), cur_level_(0) {
+    : maxLevel_(max_level), branchNum_(branch_num), cur_level_(1), head_(SkipListNode::NewNode(0, maxLevel_)) {
+    for (int i = 0; i < maxLevel_; ++i) {
+        head_->SetNext(i, nullptr);
+    }
 }
 
 // 析构函数
 template <typename Key, class Comparator>
 SkipList<Key, Comparator>::~SkipList() {
-    SkipListNode* current = header_->forward_[0];
-    while (current) {
-        SkipListNode* temp = current;
-        current = current->forward_[0];
-        delete temp;
+    SkipListNode* p = head_;
+    while (p != nullptr) {
+        SkipListNode* tmp = p;
+        p = p->next_[0];
+        delete tmp;
     }
-    delete header_;
 }
 
-// 随机生成节点的层数
 template <typename Key, class Comparator>
-int SkipList<Key, Comparator>::randomLevel() {
-    static const unsigned int kBranching = 4;
-    int level = 0;
-    while (level < maxLevel_ && (rand_() % kBranching == 0)) { // 1/4 的概率增加一层
-        level++;
+int SkipList<Key, Comparator>::getRandomLevel() {
+    int l = 1;
+    while (l < maxLevel_ && (rand_() % branchNum_ == 0)) {
+        l++;
     }
-    return level;
+    assert(l > 0);
+    return l;
+}
+
+template <typename Key, class Comparator>
+typename SkipList<Key, Comparator>::SkipListNode*
+SkipList<Key, Comparator>::upperBound(const Key &k, SkipListNode** prev) const {
+    auto p = head_;
+    auto l = getCurrentLevel() - 1;
+    while (true) {
+        auto next = p->Next(l);
+        if (next != nullptr && compare_(next->k_, k)) {
+            p = next;
+        } else {
+            if (prev != nullptr) {
+                prev[l] = p;
+            }
+            if (l == 0) {
+                return next;
+            } else {
+                --l;
+            }
+        }
+    }
 }
 
 // 插入操作
 template <typename Key, class Comparator>
-bool SkipList<Key, Comparator>::Insert(const Key& key) {
-    std::vector<SkipListNode*> update(maxLevel_ + 1, nullptr); // 记录每一层的插入位置
-    SkipListNode* current = header_;
+bool SkipList<Key, Comparator>::Insert(const Key& k) {
+    SkipListNode* prev[maxLevel_];
+    SkipListNode* current = head_;
+    auto p = upperBound(k, prev);
 
-    // 从最高层开始查找插入位置
-    for (int i = cur_level_; i >= 0; i--) {
-        while (current->forward_[i] && compare_(current->forward_[i]->k_, key) < 0) {
-            current = current->forward_[i];
-        }
-        update[i] = current; // 记录每一层的插入位置
+    if (p != nullptr && equal(p->k_, k)) {
+        std::cerr << __func__ << ", SkipList cannot Insert duplicated key." << std::endl;
+        return false;
     }
 
-    // 随机生成新节点的层数
-    int newLevel = randomLevel();
-
-    // 如果新节点的层数比当前跳表的层数高，更新跳表的层数
-    if (newLevel > cur_level_) {
-        for (int i = cur_level_ + 1; i <= newLevel; i++) {
-            update[i] = header_; // 新层的插入位置是头节点
+    auto level = getRandomLevel();
+    if (level > getCurrentLevel()) {
+        for (int i = getCurrentLevel(); i < level; ++i) {
+            prev[i] = head_;
         }
-        cur_level_ = newLevel; // 更新当前层数
+        cur_level_.store(level);
     }
 
-    // 创建新节点
-    auto newNode =
-            reinterpret_cast<SkipListNode*>(malloc(sizeof(Key) + sizeof(SkipListNode*) * newLevel));
-
-    // 更新每一层的指针
-    for (int i = 0; i <= newLevel; i++) {
-        newNode->forward_[i] = update[i]->forward_[i];
-        update[i]->forward_[i] = newNode;
+    p = SkipListNode::NewNode(k, level);
+    for (int i = 0; i < level; ++i) {
+        p->SetNext(i, prev[i]->Next(i));
+        prev[i]->SetNext(i, p);
     }
 
     return true;
@@ -72,57 +118,14 @@ bool SkipList<Key, Comparator>::Insert(const Key& key) {
 
 // 查找操作
 template <typename Key, class Comparator>
-bool SkipList<Key, Comparator>::Contains(const Key& key) const {
-    SkipListNode* current = header_;
-
-    // 从最高层开始查找
-    for (int i = cur_level_; i >= 0; i--) {
-        while (current->forward_[i] && compare_(current->forward_[i]->k_, key) < 0) {
-            current = current->forward_[i];
-        }
-    }
-
-    // 检查是否找到目标值
-    current = current->forward_[0];
-    return current && compare_(current->k_, key) == 0;
+bool SkipList<Key, Comparator>::Contains(const Key& k) const {
+    auto p = upperBound(k, nullptr);
+    return p != nullptr && equal(p->k_, k);
 }
 
 // 删除操作
 template <typename Key, class Comparator>
 bool SkipList<Key, Comparator>::Remove(const Key& key) {
-    std::vector<SkipListNode*> update(maxLevel_ + 1, nullptr); // 记录每一层的删除位置
-    SkipListNode* current = header_;
-
-    // 从最高层开始查找删除位置
-    for (int i = cur_level_; i >= 0; i--) {
-        while (current->forward_[i] && compare_(current->forward_[i]->k_, key) < 0) {
-            current = current->forward_[i];
-        }
-        update[i] = current; // 记录每一层的删除位置
-    }
-
-    // 找到目标节点
-    current = current->forward_[0];
-    if (current && compare_(current->k_, key) == 0) {
-        // 更新每一层的指针
-        for (int i = 0; i <= cur_level_; i++) {
-            if (update[i]->forward_[i] != current) {
-                break;
-            }
-            update[i]->forward_[i] = current->forward_[i];
-        }
-
-        // 删除节点
-        delete current;
-
-        // 如果删除的节点是最高层的节点，更新跳表的层数
-        while (cur_level_ > 0 && header_->forward_[cur_level_] == nullptr) {
-            cur_level_--;
-        }
-
-        return true;
-    }
-
     return false;
 }
 
@@ -130,11 +133,11 @@ bool SkipList<Key, Comparator>::Remove(const Key& key) {
 template <typename Key, class Comparator>
 void SkipList<Key, Comparator>::Print() const {
     for (int i = cur_level_; i >= 0; i--) {
-        SkipListNode* current = header_->forward_[i];
+        SkipListNode* p = head_->next_[i];
         std::cout << "Level " << i << ": ";
-        while (current) {
-            std::cout << current->k_ << " ";
-            current = current->forward_[i];
+        while (p) {
+            std::cout << p->k_ << " ";
+            p = p->next_[i];
         }
         std::cout << std::endl;
     }

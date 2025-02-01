@@ -26,6 +26,9 @@ private:
     Comparator compare_;
     hashBucket* bucket_;
 
+    bool equal(const Key &i, const Key &j) const {
+        return !compare_(i, j) && !compare_(j, i);
+    }
     size_t getHash(const Key &key) const;
     hashNode** findPointer(const Key &key, size_t hash) const;
     void resize();

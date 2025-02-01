@@ -58,8 +58,3 @@ TEST_F(HashTableTest, EmptyTable) {
     EXPECT_FALSE(ht->Remove(0));      // 空表删除失败
     EXPECT_FALSE(ht->Contains(0));        // 空表查找失败
 }
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

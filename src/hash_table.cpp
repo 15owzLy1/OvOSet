@@ -48,7 +48,7 @@ template <typename Key, class Comparator>
 typename HashTable<Key, Comparator>::hashNode**
 HashTable<Key, Comparator>::findPointer(const Key &key, const size_t hash) const {
     auto p = &bucket_[hash & (bucket_num_ - 1)].head;
-    for (; *p != nullptr && ((*p)->hash_ != hash || compare_(key, (*p)->k_)); p = &(*p)->next_);
+    for (; *p != nullptr && ((*p)->hash_ != hash || !equal(key, (*p)->k_)); p = &(*p)->next_);
     return p;
 }
 

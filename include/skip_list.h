@@ -9,43 +9,44 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <cassert>
 #include "random.h"
+#include "ovo_set.h"
 
 template <typename Key, class Comparator>
-class SkipList {
+class SkipList : public OvOSet<Key, Comparator> {
 private:
-    struct SkipListNode {
-        Key k_;
-        SkipListNode* forward_[1];
-    };
+    struct SkipListNode;
 
     const uint16_t maxLevel_;
     const uint16_t branchNum_;
-    Comparator compare_; // 比较器
-    uint16_t cur_level_;   // 当前跳表的层数
-    SkipListNode* header_; // 头节点
+    Comparator compare_;
+    std::atomic<int> cur_level_;   // 当前跳表的层数
+    SkipListNode* const head_;
     Random rand_;
 
-    // 随机生成节点的层数
-    int randomLevel();
+    int getRandomLevel();
+    inline int getCurrentLevel() const {
+        return cur_level_.load();
+    }
+    bool equal(const Key &i, const Key &j) const {
+        return !compare_(i, j) && !compare_(j, i);
+    }
+    SkipListNode* upperBound(const Key &k, SkipListNode** prev) const;
 
 public:
-    // 构造函数
-    SkipList(uint16_t max_level = 16, uint16_t branch_num = 4);
+    explicit SkipList(uint16_t max_level = 12, uint16_t branch_num = 4);
+    SkipList(const SkipList&) = delete;
+    SkipList& operator=(const SkipList&) = delete;
 
-    // 析构函数
     ~SkipList();
 
-    // 插入操作
     bool Insert(const Key& key);
 
-    // 查找操作
     bool Contains(const Key& key) const;
 
-    // 删除操作
     bool Remove(const Key& key);
 
-    // 打印跳表
     void Print() const;
 };
 
