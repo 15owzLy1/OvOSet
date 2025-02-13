@@ -14,6 +14,9 @@ target_link_libraries(HashTableIOTest data_structures gtest gtest_main)
 add_executable(SkipListIOTest skiplist_io_test.cpp)
 target_link_libraries(SkipListIOTest data_structures gtest gtest_main)
 
+add_executable(RBTreeIOTest rb_tree_io_test.cpp)
+target_link_libraries(RBTreeIOTest data_structures gtest gtest_main)
+
 
 # 链接 gtest 和 gtest_main
 target_link_libraries(UnitTests gtest gtest_main)

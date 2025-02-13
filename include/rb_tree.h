@@ -47,5 +47,7 @@ public:
 };
 
 template class RBTree<int, std::less<>>;
+template class RBTree<uint32_t, std::less<>>;
+template class RBTree<uint64_t, std::less<>>;
 
 #endif // RB_TREE_H
