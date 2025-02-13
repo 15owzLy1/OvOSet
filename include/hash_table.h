@@ -22,7 +22,7 @@ private:
         hashNode* head;
     };
 
-    size_t ele_num_, bucket_num_;
+    size_t ele_num_, bucket_num_, hash_seed_;
     Comparator compare_;
     hashBucket* bucket_;
 
@@ -41,5 +41,7 @@ public:
 };
 
 template class HashTable<int, std::less<>>;
+template class HashTable<uint32_t, std::less<>>;
+template class HashTable<uint64_t, std::less<>>;
 
 #endif // HASH_TABLE_H

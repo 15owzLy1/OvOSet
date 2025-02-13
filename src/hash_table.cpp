@@ -1,7 +1,6 @@
 //
 // Created by Lddyss on 2025/1/30.
 //
-#include <functional>
 #include <cassert>
 #include "hash_table.h"
 
@@ -9,11 +8,12 @@ template <typename Key, class Comparator>
 HashTable<Key, Comparator>::HashTable(size_t bucket_num) : ele_num_(0), bucket_num_(bucket_num) {
     bucket_ = new hashBucket[bucket_num_];
     memset(bucket_, 0, sizeof(hashBucket) * bucket_num_);
+    hash_seed_ = Random64{}();
 }
 
 template <typename Key, class Comparator>
 size_t HashTable<Key, Comparator>::getHash(const Key& key) const {
-    return std::hash<Key>{}(key);
+    return XXHash::hash(static_cast<const void*>(&key), sizeof(key), hash_seed_);
 }
 
 template <typename Key, class Comparator>
@@ -78,7 +78,7 @@ bool HashTable<Key, Comparator>::Remove(const Key& key) {
         return false;
     }
     *ret = p->next_;
-    delete[] p;
+    delete p;
     --ele_num_;
     return true;
 }

@@ -10,6 +10,7 @@
 #include <atomic>
 #include <array>
 #include <thread>
+#include <cstring>
 
 class Random {
 public:
@@ -80,4 +81,121 @@ private:
     std::atomic<uint64_t> seed_version_{0};
 };
 
+class Random64 {
+public:
+    // 初始化（混合熵源 + 硬件种子）
+    explicit Random64(uint64_t seed = 0) {
+        if (seed == 0) {
+            seed = generate_strong_seed();
+        }
+        reseed(seed);
+    }
+
+    // 线程安全的核心生成函数（可指定范围）
+    uint64_t operator()(uint64_t min = 0, uint64_t max = UINT64_MAX) {
+        // 每个线程持有独立引擎副本避免锁竞争
+        thread_local std::mt19937 local_engine = init_thread_local_engine();
+        thread_local std::uniform_int_distribution<uint64_t> dist;
+
+        if (min == 0 && max == UINT64_MAX) {
+            return local_engine(); // 快速路径：直接输出32位
+        } else {
+            return dist(local_engine,
+                        std::uniform_int_distribution<uint64_t>::param_type{min, max});
+        }
+    }
+
+    // 批量生成（缓存友好）
+    void fill_bulk(uint64_t* buffer, size_t count,
+                   uint64_t min = 0, uint64_t max = UINT32_MAX) {
+        thread_local std::mt19937 local_engine = init_thread_local_engine();
+        std::generate_n(buffer, count, [&]() {
+            return (*this)(min, max);
+        });
+    }
+
+    // 原子性重播种（线程安全）
+    void reseed(uint64_t seed) {
+        master_seed_.store(seed, std::memory_order_relaxed);
+        ++seed_version_;  // 使用序号标记种子版本
+    }
+
+private:
+    // 混合熵源生成强种子
+    static uint64_t generate_strong_seed() {
+        std::random_device rd;
+        std::array<uint64_t, 4> entropy = {
+                rd(),
+                static_cast<uint64_t>(std::chrono::high_resolution_clock::now()
+                        .time_since_epoch().count()),
+                static_cast<uint64_t>(reinterpret_cast<uintptr_t>(&entropy)),
+                static_cast<uint64_t>(std::thread::hardware_concurrency())
+        };
+        std::seed_seq seq(entropy.begin(), entropy.end());
+        uint64_t result;
+        seq.generate(&result, &result + 1);
+        return result;
+    }
+
+    // 线程本地引擎初始化（带版本控制）
+    std::mt19937 init_thread_local_engine() {
+        uint64_t seed = master_seed_.load(std::memory_order_relaxed);
+        uint64_t version = seed_version_.load(std::memory_order_acquire);
+        return std::mt19937(seed +
+                            static_cast<uint64_t>(version) +
+                            std::hash<std::thread::id>{}(std::this_thread::get_id()));
+    }
+
+    std::atomic<uint64_t> master_seed_;
+    std::atomic<uint64_t> seed_version_{0};
+};
+
 #endif //OVOSKIPLIST_RANDOM_H
+
+class XXHash {
+public:
+    static uint64_t hash(const void* input, size_t length, uint64_t seed = 0) {
+        const uint8_t* data = static_cast<const uint8_t*>(input);
+        uint64_t hash = seed + PRIME1 + PRIME2 * length;
+
+        // Process 8-byte chunks
+        size_t index = 0;
+        while (length >= 8) {
+            uint64_t chunk;
+            std::memcpy(&chunk, data + index, sizeof(chunk));
+            chunk *= PRIME2;
+            chunk = std::rotl(chunk, 31);
+            chunk *= PRIME1;
+            hash ^= chunk;
+            hash = std::rotl(hash, 27) * PRIME1 + PRIME4;
+            index += 8;
+            length -= 8;
+        }
+
+        // Process remaining bytes
+        if (length > 0) {
+            uint64_t remaining = 0;
+            std::memcpy(&remaining, data + index, length);
+            remaining *= PRIME5;
+            remaining = std::rotl(remaining, 11);
+            remaining *= PRIME1;
+            hash ^= remaining;
+        }
+
+        // Finalization
+        hash ^= length;
+        hash ^= hash >> 33;
+        hash *= PRIME2;
+        hash ^= hash >> 29;
+        hash *= PRIME3;
+        hash ^= hash >> 32;
+
+        return hash;
+    }
+private:
+    static constexpr uint64_t PRIME1 = 0x9E3779B185EBCA87ULL;
+    static constexpr uint64_t PRIME2 = 0xC2B2AE3D27D4EB4FULL;
+    static constexpr uint64_t PRIME3 = 0x27D4EB2F165667C5ULL;
+    static constexpr uint64_t PRIME4 = 0x165667C527D4EB2FULL;
+    static constexpr uint64_t PRIME5 = 0xD16021A4E7210153ULL;
+};

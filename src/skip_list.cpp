@@ -19,19 +19,19 @@ struct SkipList<Key, Comparator>::SkipListNode {
     }
     SkipListNode* Next(int i) {
         assert(i >= 0);
-        return next_[i].load();
+        return next_[i].load(std::memory_order_acquire);
     }
     void SetNext(int i, SkipListNode* p) {
         assert(i >= 0);
-        next_[i].store(p);
+        next_[i].store(p, std::memory_order_release);
     }
     SkipListNode* unsafe_Next(int i) {
         assert(i >= 0);
-        return next_[i].load();
+        return next_[i].load(std::memory_order_relaxed);
     }
     void unsafe_SetNext(int i, SkipListNode* p) {
         assert(i >= 0);
-        next_[i].store(p);
+        next_[i].store(p, std::memory_order_relaxed);
     }
 };
 
@@ -95,7 +95,7 @@ bool SkipList<Key, Comparator>::Insert(const Key& k) {
     auto p = upperBound(k, prev);
 
     if (p != nullptr && equal(p->k_, k)) {
-        std::cerr << __func__ << ", SkipList cannot Insert duplicated key." << std::endl;
+//        std::cerr << __func__ << ", SkipList cannot Insert duplicated key." << std::endl;
         return false;
     }
 
@@ -104,12 +104,12 @@ bool SkipList<Key, Comparator>::Insert(const Key& k) {
         for (int i = getCurrentLevel(); i < level; ++i) {
             prev[i] = head_;
         }
-        cur_level_.store(level);
+        cur_level_.store(level, std::memory_order_release);
     }
 
     p = SkipListNode::NewNode(k, level);
     for (int i = 0; i < level; ++i) {
-        p->SetNext(i, prev[i]->Next(i));
+        p->unsafe_SetNext(i, prev[i]->unsafe_Next(i));
         prev[i]->SetNext(i, p);
     }
 
@@ -125,9 +125,21 @@ bool SkipList<Key, Comparator>::Contains(const Key& k) const {
 
 // 删除操作
 template <typename Key, class Comparator>
-bool SkipList<Key, Comparator>::Remove(const Key& key) {
-    return false;
+bool SkipList<Key, Comparator>::Remove(const Key& k) {
+    SkipListNode* prev[maxLevel_];
+    auto p = upperBound(k, prev);
+    if (p == nullptr) {
+        return false;
+    }
+    for (int i = getCurrentLevel() - 1; i >= 0; --i) {
+        if (prev[i]->Next(i) == p) {
+            prev[i]->SetNext(i, p->Next(i));
+        }
+    }
+    delete p;
+    return true;
 }
+#pragma clang diagnostic pop
 
 // 打印跳表
 template <typename Key, class Comparator>

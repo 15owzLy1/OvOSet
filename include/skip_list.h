@@ -10,7 +10,6 @@
 #include <ctime>
 #include <iostream>
 #include <cassert>
-#include "random.h"
 #include "ovo_set.h"
 
 template <typename Key, class Comparator>
@@ -27,7 +26,7 @@ private:
 
     int getRandomLevel();
     inline int getCurrentLevel() const {
-        return cur_level_.load();
+        return cur_level_.load(std::memory_order_acquire);
     }
     bool equal(const Key &i, const Key &j) const {
         return !compare_(i, j) && !compare_(j, i);
@@ -51,5 +50,7 @@ public:
 };
 
 template class SkipList<int, std::less<>>;
+template class SkipList<uint32_t, std::less<>>;
+template class SkipList<uint64_t, std::less<>>;
 
 #endif // SKIP_LIST_H
