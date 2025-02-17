@@ -6,6 +6,7 @@
 
 #include "ovo_set.h"
 #include <iostream>
+#include <functional>
 
 enum Color { RED, BLACK };
 
@@ -13,36 +14,40 @@ template <typename Key, class Comparator>
 class RBTree : public OvOSet<Key, Comparator> {
 private:
     struct Node {
-        Key key;
-        Color color;
-        Node* left;
-        Node* right;
-        Node* parent;
+        Key k_;
+        Color color_;
+        Node* left_;
+        Node* right_;
+        Node* parent_;
 
-        Node(const Key& k, Color c = RED, Node* l = nullptr, Node* r = nullptr, Node* p = nullptr)
-                : key(k), color(c), left(l), right(r), parent(p) {}
+        Node(const Key& k, Color c = RED, Node* l = nullptr, Node* r = nullptr, Node* pa = nullptr)
+                : k_(k), color_(c), left_(l), right_(r), parent_(pa) {}
     };
 
-    Node* root;
-    Comparator compare;
+    Node* root_;
+    Comparator compare_;
 
-    void rotateLeft(Node*& root, Node*& pt);
-    void rotateRight(Node*& root, Node*& pt);
-    void fixInsert(Node*& root, Node*& pt);
-    void fixDelete(Node*& root, Node*& pt);
-    Node* insertBST(Node* root, Node* pt);
-    Node* searchTree(Node* root, const Key& key) const;
-    Node* minValueNode(Node* node);
-    void transplant(Node*& root, Node* u, Node* v);
-    void clear(Node* node);
+    void leftRotate(Node* x);
+    void rightRotate(Node* x);
+    void insertFixup(Node* z);
+    void deleteFixup(Node* x);
+    void transplant(Node* u, Node* v);
+    bool findNode(const Key &k, Node** res) const ;
+    bool insertNode(const Key &k, Node* &n_node);
+    bool deleteNode(const Key &k);
+    Node* minimum(Node* x);
+    void destroy(Node* node);
+    bool equal(const Key &i, const Key &j) const {
+        return !compare_(i, j) && !compare_(j, i);
+    }
 
 public:
     RBTree();
     ~RBTree();
 
-    bool Insert(const Key& key) override;
-    bool Remove(const Key& key) override;
-    bool Contains(const Key& key) const override;
+    bool Insert(const Key &key) override;
+    bool Remove(const Key &key) override;
+    bool Contains(const Key &key) const override;
 
 };
 

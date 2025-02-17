@@ -1,298 +1,286 @@
+//
+// Created by Lddyss on 2025/1/30.
+//
 #include "rb_tree.h"
+#include <algorithm>
 
+// 构造函数
 template <typename Key, class Comparator>
-RBTree<Key, Comparator>::RBTree() : root(nullptr) {}
+RBTree<Key, Comparator>::RBTree() : root_(nullptr) {}
 
+// 析构函数
 template <typename Key, class Comparator>
 RBTree<Key, Comparator>::~RBTree() {
-    clear(root);
+    destroy(root_);
+}
+
+// 递归销毁树
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::destroy(Node* node) {
+    if (node != nullptr) {
+        destroy(node->left_);
+        destroy(node->right_);
+        delete node;
+    }
 }
 
 template <typename Key, class Comparator>
-void RBTree<Key, Comparator>::rotateLeft(Node*& p, Node*& pt) {
-    Node* ptRight = pt->right;
-    pt->right = ptRight->left;
-
-    if (pt->right != nullptr) {
-        pt->right->parent = pt;
-    }
-
-    ptRight->parent = pt->parent;
-
-    if (pt->parent == nullptr) {
-        p = ptRight;
-    } else if (pt == pt->parent->left) {
-        pt->parent->left = ptRight;
-    } else {
-        pt->parent->right = ptRight;
-    }
-
-    ptRight->left = pt;
-    pt->parent = ptRight;
-}
-
-template <typename Key, class Comparator>
-void RBTree<Key, Comparator>::rotateRight(Node*& p, Node*& pt) {
-    Node* ptLeft = pt->left;
-    pt->left = ptLeft->right;
-
-    if (pt->left != nullptr) {
-        pt->left->parent = pt;
-    }
-
-    ptLeft->parent = pt->parent;
-
-    if (pt->parent == nullptr) {
-        p = ptLeft;
-    } else if (pt == pt->parent->right) {
-        pt->parent->right = ptLeft;
-    } else {
-        pt->parent->left = ptLeft;
-    }
-
-    ptLeft->right = pt;
-    pt->parent = ptLeft;
-}
-
-template <typename Key, class Comparator>
-void RBTree<Key, Comparator>::fixInsert(Node*& p, Node*& pt) {
-    Node* parentPt = nullptr;
-    Node* grandParentPt = nullptr;
-
-    while ((pt != p) && (pt->color != BLACK) && (pt->parent->color == RED)) {
-        parentPt = pt->parent;
-        grandParentPt = pt->parent->parent;
-
-        if (parentPt == grandParentPt->left) {
-            Node* unclePt = grandParentPt->right;
-
-            if (unclePt != nullptr && unclePt->color == RED) {
-                grandParentPt->color = RED;
-                parentPt->color = BLACK;
-                unclePt->color = BLACK;
-                pt = grandParentPt;
-            } else {
-                if (pt == parentPt->right) {
-                    rotateLeft(p, parentPt);
-                    pt = parentPt;
-                    parentPt = pt->parent;
-                }
-
-                rotateRight(p, grandParentPt);
-                std::swap(parentPt->color, grandParentPt->color);
-                pt = parentPt;
-            }
+bool RBTree<Key, Comparator>::findNode(const Key &k, RBTree::Node** res) const {
+    Node* p = root_;
+    while (p != nullptr) {
+        if (res != nullptr) {
+            *res = p;
+        }
+        if (compare_(k, p->k_)) {
+            p = p->left_;
+        } else if (compare_(p->k_, k)) {
+            p = p->right_;
         } else {
-            Node* unclePt = grandParentPt->left;
-
-            if (unclePt != nullptr && unclePt->color == RED) {
-                grandParentPt->color = RED;
-                parentPt->color = BLACK;
-                unclePt->color = BLACK;
-                pt = grandParentPt;
-            } else {
-                if (pt == parentPt->left) {
-                    rotateRight(p, parentPt);
-                    pt = parentPt;
-                    parentPt = pt->parent;
-                }
-
-                rotateLeft(p, grandParentPt);
-                std::swap(parentPt->color, grandParentPt->color);
-                pt = parentPt;
+            if (res != nullptr) {
+                *res = p;
             }
+            return true;
         }
     }
-
-    p->color = BLACK;
+    return false;
 }
 
+
 template <typename Key, class Comparator>
-void RBTree<Key, Comparator>::fixDelete(Node*& p, Node*& pt) {
-    while (pt != p && pt->color == BLACK) {
-        if (pt == pt->parent->left) {
-            Node* sibling = pt->parent->right;
-
-            if (sibling->color == RED) {
-                sibling->color = BLACK;
-                pt->parent->color = RED;
-                rotateLeft(p, pt->parent);
-                sibling = pt->parent->right;
-            }
-
-            if (sibling->left->color == BLACK && sibling->right->color == BLACK) {
-                sibling->color = RED;
-                pt = pt->parent;
-            } else {
-                if (sibling->right->color == BLACK) {
-                    sibling->left->color = BLACK;
-                    sibling->color = RED;
-                    rotateRight(p, sibling);
-                    sibling = pt->parent->right;
-                }
-
-                sibling->color = pt->parent->color;
-                pt->parent->color = BLACK;
-                sibling->right->color = BLACK;
-                rotateLeft(p, pt->parent);
-                pt = p;
-            }
-        } else {
-            Node* sibling = pt->parent->left;
-
-            if (sibling->color == RED) {
-                sibling->color = BLACK;
-                pt->parent->color = RED;
-                rotateRight(p, pt->parent);
-                sibling = pt->parent->left;
-            }
-
-            if (sibling->right->color == BLACK && sibling->left->color == BLACK) {
-                sibling->color = RED;
-                pt = pt->parent;
-            } else {
-                if (sibling->left->color == BLACK) {
-                    sibling->right->color = BLACK;
-                    sibling->color = RED;
-                    rotateLeft(p, sibling);
-                    sibling = pt->parent->left;
-                }
-
-                sibling->color = pt->parent->color;
-                pt->parent->color = BLACK;
-                sibling->left->color = BLACK;
-                rotateRight(p, pt->parent);
-                pt = p;
-            }
-        }
+bool RBTree<Key, Comparator>::insertNode(const Key &k, Node* &n_node) {
+    Node* p = nullptr;
+    if (findNode(k, &p)) {
+        return false;
     }
 
-    pt->color = BLACK;
-}
-
-template <typename Key, class Comparator>
-typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::insertBST(Node* p, Node* pt) {
+    n_node = new Node(k, RED, nullptr, nullptr, p);
     if (p == nullptr) {
-        return pt;
-    }
-
-    if (compare(pt->key, p->key) < 0) {
-        p->left = insertBST(p->left, pt);
-        p->left->parent = p;
-    } else if (compare(pt->key, p->key) > 0) {
-        p->right = insertBST(p->right, pt);
-        p->right->parent = p;
-    }
-
-    return p;
-}
-
-template <typename Key, class Comparator>
-typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::searchTree(Node* p, const Key& key) const {
-    if (p == nullptr || compare(p->key, key) == 0) {
-        return p;
-    }
-
-    if (compare(p->key, key) < 0) {
-        return searchTree(p->right, key);
-    }
-
-    return searchTree(p->left, key);
-}
-
-template <typename Key, class Comparator>
-typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::minValueNode(Node* p) {
-    Node* current = p;
-    while (current->left != nullptr) {
-        current = current->left;
-    }
-    return current;
-}
-
-template <typename Key, class Comparator>
-void RBTree<Key, Comparator>::transplant(Node*& p, Node* u, Node* v) {
-    if (u->parent == nullptr) {
-        p = v;
-    } else if (u == u->parent->left) {
-        u->parent->left = v;
+        root_ = n_node;
+    } else if (compare_(k, p->k_)) {
+        p->left_ = n_node;
     } else {
-        u->parent->right = v;
+        p->right_ = n_node;
     }
-
-    if (v != nullptr) {
-        v->parent = u->parent;
-    }
-}
-
-template <typename Key, class Comparator>
-void RBTree<Key, Comparator>::clear(Node* p) {
-    if (p == nullptr) {
-        return;
-    }
-
-    clear(p->left);
-    clear(p->right);
-    delete p;
-}
-
-template <typename Key, class Comparator>
-bool RBTree<Key, Comparator>::Insert(const Key& key) {
-    Node* pt = new Node(key);
-
-    root = insertBST(root, pt);
-    fixInsert(root, pt);
+    insertFixup(n_node);
     return true;
 }
 
+// 插入修复
 template <typename Key, class Comparator>
-bool RBTree<Key, Comparator>::Remove(const Key& key) {
-    Node* z = searchTree(root, key);
-    if (z == nullptr) {
+void RBTree<Key, Comparator>::insertFixup(Node* z) {
+    while (z->parent_ != nullptr && z->parent_->color_ == RED) {
+        if (z->parent_ == z->parent_->parent_->left_) {
+            Node* y = z->parent_->parent_->right_;
+            if (y != nullptr && y->color_ == RED) {
+                z->parent_->color_ = BLACK;
+                y->color_ = BLACK;
+                z->parent_->parent_->color_ = RED;
+                z = z->parent_->parent_;
+            } else {
+                if (z == z->parent_->right_) {
+                    z = z->parent_;
+                    leftRotate(z);
+                }
+                z->parent_->color_ = BLACK;
+                z->parent_->parent_->color_ = RED;
+                rightRotate(z->parent_->parent_);
+            }
+        } else {
+            Node* y = z->parent_->parent_->left_;
+            if (y != nullptr && y->color_ == RED) {
+                z->parent_->color_ = BLACK;
+                y->color_ = BLACK;
+                z->parent_->parent_->color_ = RED;
+                z = z->parent_->parent_;
+            } else {
+                if (z == z->parent_->left_) {
+                    z = z->parent_;
+                    rightRotate(z);
+                }
+                z->parent_->color_ = BLACK;
+                z->parent_->parent_->color_ = RED;
+                leftRotate(z->parent_->parent_);
+            }
+        }
+    }
+    root_->color_ = BLACK;
+}
+
+// 左旋
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::leftRotate(Node* x) {
+    Node* y = x->right_;
+    x->right_ = y->left_;
+    if (y->left_ != nullptr) {
+        y->left_->parent_ = x;
+    }
+    y->parent_ = x->parent_;
+    if (x->parent_ == nullptr) {
+        root_ = y;
+    } else if (x == x->parent_->left_) {
+        x->parent_->left_ = y;
+    } else {
+        x->parent_->right_ = y;
+    }
+    y->left_ = x;
+    x->parent_ = y;
+}
+
+// 右旋
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::rightRotate(Node* x) {
+    Node* y = x->left_;
+    x->left_ = y->right_;
+    if (y->right_ != nullptr) {
+        y->right_->parent_ = x;
+    }
+    y->parent_ = x->parent_;
+    if (x->parent_ == nullptr) {
+        root_ = y;
+    } else if (x == x->parent_->right_) {
+        x->parent_->right_ = y;
+    } else {
+        x->parent_->left_ = y;
+    }
+    y->right_ = x;
+    x->parent_ = y;
+}
+
+// 查找最小节点
+template <typename Key, class Comparator>
+typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::minimum(Node* x) {
+    while (x->left_ != nullptr) {
+        x = x->left_;
+    }
+    return x;
+}
+
+// 节点替换
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::transplant(Node* u, Node* v) {
+    if (u->parent_ == nullptr) {
+        root_ = v;
+    } else if (u == u->parent_->left_) {
+        u->parent_->left_ = v;
+    } else {
+        u->parent_->right_ = v;
+    }
+    if (v != nullptr) {
+        v->parent_ = u->parent_;
+    }
+}
+template <typename Key, class Comparator>
+bool RBTree<Key, Comparator>::deleteNode(const Key &k) {
+    Node* z;
+    if (!findNode(k, &z)) {
         return false;
     }
 
     Node* y = z;
+    Color y_original_color = y->color_;
     Node* x;
-    Color yOriginalColor = y->color;
 
-    if (z->left == nullptr) {
-        x = z->right;
-        transplant(root, z, z->right);
-    } else if (z->right == nullptr) {
-        x = z->left;
-        transplant(root, z, z->left);
+    if (z->left_ == nullptr) {
+        x = z->right_;
+        transplant(z, z->right_);
+    } else if (z->right_ == nullptr) {
+        x = z->left_;
+        transplant(z, z->left_);
     } else {
-        y = minValueNode(z->right);
-        yOriginalColor = y->color;
-        x = y->right;
-
-        if (y->parent == z) {
-            if (x != nullptr) {
-                x->parent = y;
-            }
+        y = minimum(z->right_);
+        y_original_color = y->color_;
+        x = y->right_;
+        if (y->parent_ == z) {
+            if (x != nullptr) x->parent_ = y;
         } else {
-            transplant(root, y, y->right);
-            y->right = z->right;
-            y->right->parent = y;
+            transplant(y, y->right_);
+            y->right_ = z->right_;
+            y->right_->parent_ = y;
         }
-
-        transplant(root, z, y);
-        y->left = z->left;
-        y->left->parent = y;
-        y->color = z->color;
+        transplant(z, y);
+        y->left_ = z->left_;
+        y->left_->parent_ = y;
+        y->color_ = z->color_;
     }
 
     delete z;
-
-    if (yOriginalColor == BLACK) {
-        fixDelete(root, x);
+    if (y_original_color == BLACK && x != nullptr) {
+        deleteFixup(x);
     }
-
     return true;
 }
 
 template <typename Key, class Comparator>
-bool RBTree<Key, Comparator>::Contains(const Key& key) const {
-    Node* result = searchTree(root, key);
-    return result != nullptr;
+void RBTree<Key, Comparator>::deleteFixup(Node* x) {
+    while (x != root_ && (x == nullptr || x->color_ == BLACK)) {
+        if (x == x->parent_->left_) {
+            Node* w = x->parent_->right_;
+            if (w->color_ == RED) {
+                w->color_ = BLACK;
+                x->parent_->color_ = RED;
+                leftRotate(x->parent_);
+                w = x->parent_->right_;
+            }
+            if ((w->left_ == nullptr || w->left_->color_ == BLACK) &&
+                (w->right_ == nullptr || w->right_->color_ == BLACK)) {
+                w->color_ = RED;
+                x = x->parent_;
+            } else {
+                if (w->right_ == nullptr || w->right_->color_ == BLACK) {
+                    w->left_->color_ = BLACK;
+                    w->color_ = RED;
+                    rightRotate(w);
+                    w = x->parent_->right_;
+                }
+                w->color_ = x->parent_->color_;
+                x->parent_->color_ = BLACK;
+                w->right_->color_ = BLACK;
+                leftRotate(x->parent_);
+                x = root_;
+            }
+        } else {
+            Node* w = x->parent_->left_;
+            if (w->color_ == RED) {
+                w->color_ = BLACK;
+                x->parent_->color_ = RED;
+                rightRotate(x->parent_);
+                w = x->parent_->left_;
+            }
+            if ((w->right_ == nullptr || w->right_->color_ == BLACK) &&
+                (w->left_ == nullptr || w->left_->color_ == BLACK)) {
+                w->color_ = RED;
+                x = x->parent_;
+            } else {
+                if (w->left_ == nullptr || w->left_->color_ == BLACK) {
+                    w->right_->color_ = BLACK;
+                    w->color_ = RED;
+                    leftRotate(w);
+                    w = x->parent_->left_;
+                }
+                w->color_ = x->parent_->color_;
+                x->parent_->color_ = BLACK;
+                w->left_->color_ = BLACK;
+                rightRotate(x->parent_);
+                x = root_;
+            }
+        }
+    }
+    if (x != nullptr) x->color_ = BLACK;
+}
+
+template <typename Key, class Comparator>
+bool RBTree<Key, Comparator>::Contains(const Key &key) const {
+    return findNode(key, nullptr);
+}
+
+template <typename Key, class Comparator>
+bool RBTree<Key, Comparator>::Insert(const Key& key) {
+    Node* n_node = nullptr;
+    auto ret = insertNode(key, n_node);
+    return ret;
+}
+
+template <typename Key, class Comparator>
+bool RBTree<Key, Comparator>::Remove(const Key& key) {
+    return deleteNode(key);
 }

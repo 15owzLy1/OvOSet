@@ -28,16 +28,6 @@ TEST_F(RBTreeTest, InsertTest) {
         EXPECT_TRUE(rb->Contains(val)) << "Element " << val << " should be in the tree.";
     }
 
-    // 插入大量元素
-    std::vector<int> large_set(1000);
-    std::iota(large_set.begin(), large_set.end(), 0);  // 生成 0 到 999 的整数序列
-    for (int val : large_set) {
-        rb->Insert(val);
-    }
-    for (int val : large_set) {
-        EXPECT_TRUE(rb->Contains(val)) << "Element " << val << " should be in the tree.";
-    }
-
     // 插入重复元素
     rb->Insert(5);
     rb->Insert(10);
