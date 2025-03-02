@@ -12,3 +12,6 @@ target_link_libraries(BM_SkipListTest data_structures benchmark::benchmark)
 # 单独的 test
 add_executable(BM_SKInsertContainsTest sk_insert_contains_test.cpp)
 target_link_libraries(BM_SKInsertContainsTest data_structures benchmark::benchmark)
+
+add_executable(BM_SKInsertTest sk_insert_test.cpp)
+target_link_libraries(BM_SKInsertTest data_structures benchmark::benchmark)

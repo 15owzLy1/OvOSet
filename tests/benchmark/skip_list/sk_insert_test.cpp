@@ -2,7 +2,7 @@
 #include "skip_list.h"
 #include "benchmark/benchmark.h"
 
-class SKInsertContainsTest : public benchmark::Fixture {
+class SKInsertTest : public benchmark::Fixture {
 public:
     void SetUp(const ::benchmark::State& state) override {
         size = state.range(0);
@@ -24,28 +24,20 @@ public:
     size_t size;
 };
 
-BENCHMARK_DEFINE_F(SKInsertContainsTest, MixedOperations)(benchmark::State& state) {
-    const int insert_rate = state.range(1);
-
-    Random op_rnd;
+BENCHMARK_DEFINE_F(SKInsertTest, PureInsert)(benchmark::State& state) {
 
     for (auto _ : state) {
         for (int i = 0; i < size; ++i) {
-            if (op_rnd() % 100 < insert_rate) {
-                set->Insert(data[i]);
-            } else {
-                set->Contains(data[i]);
-            }
+            set->Insert(data[i]);
         }
     }
 }
 
-BENCHMARK_REGISTER_F(SKInsertContainsTest, MixedOperations)
+BENCHMARK_REGISTER_F(SKInsertTest, PureInsert)
         ->ArgsProduct({
                               {10000, 1000000, 5000000},
-                              {50, 20, 10},
                       })
-        ->ArgNames({"Size", "InsertRate"})
+        ->ArgNames({"Size"})
         ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();

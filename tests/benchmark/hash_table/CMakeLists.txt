@@ -12,3 +12,6 @@ target_link_libraries(BM_HashTableTest data_structures benchmark::benchmark)
 # 单独的 test
 add_executable(BM_HTInsertContainsTest ht_insert_contains_test.cpp)
 target_link_libraries(BM_HTInsertContainsTest data_structures benchmark::benchmark)
+
+add_executable(BM_HTInsertTest ht_insert_test.cpp)
+target_link_libraries(BM_HTInsertTest data_structures benchmark::benchmark)

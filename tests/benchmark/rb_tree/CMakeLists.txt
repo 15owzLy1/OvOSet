@@ -12,3 +12,6 @@ target_link_libraries(BM_RBTreeTest data_structures benchmark::benchmark)
 # 单独的 test
 add_executable(BM_RBInsertContainsTest rb_insert_contains_test.cpp)
 target_link_libraries(BM_RBInsertContainsTest data_structures benchmark::benchmark)
+
+add_executable(BM_RBInsertTest rb_insert_test.cpp)
+target_link_libraries(BM_RBInsertTest data_structures benchmark::benchmark)

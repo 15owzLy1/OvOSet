@@ -46,7 +46,7 @@ BENCHMARK_REGISTER_F(RBInsertContainsTest, MixedOperations)
                               {10000, 1000000, 5000000},
                               {50, 20, 10},
                       })
-        ->ArgNames({"InsertRate", "Size"})
+        ->ArgNames({"Size", "InsertRate"})
         ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();

@@ -40,11 +40,11 @@ public:
 
     ~SkipList();
 
-    bool Insert(const Key& key);
+    bool Insert(const Key& key) override;
 
-    bool Contains(const Key& key) const;
+    bool Contains(const Key& key) const override;
 
-    bool Remove(const Key& key);
+    bool Remove(const Key& key) override;
 
     void Print() const;
 };

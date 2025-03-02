@@ -66,7 +66,7 @@ int SkipList<Key, Comparator>::getRandomLevel() {
 }
 
 template <typename Key, class Comparator>
-typename SkipList<Key, Comparator>::SkipListNode*
+SkipList<Key, Comparator>::SkipListNode*
 SkipList<Key, Comparator>::upperBound(const Key &k, SkipListNode** prev) const {
     auto p = head_;
     auto l = getCurrentLevel() - 1;
