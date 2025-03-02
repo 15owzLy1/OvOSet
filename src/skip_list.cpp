@@ -61,6 +61,7 @@ int SkipList<Key, Comparator>::getRandomLevel() {
     while (l < maxLevel_ && (rand_() % branchNum_ == 0)) {
         l++;
     }
+    this->memory_usage_ += l * sizeof(SkipListNode*) + sizeof(Key);
     assert(l > 0);
     return l;
 }

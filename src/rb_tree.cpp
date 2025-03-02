@@ -54,6 +54,7 @@ bool RBTree<Key, Comparator>::insertNode(const Key &k, Node* &n_node) {
     }
 
     n_node = new Node(k, RED, nullptr, nullptr, p);
+    this->memory_usage_ += sizeof(Node);
     if (p == nullptr) {
         root_ = n_node;
     } else if (compare_(k, p->k_)) {

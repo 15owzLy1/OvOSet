@@ -9,6 +9,7 @@ HashTable<Key, Comparator>::HashTable(size_t bucket_num) : ele_num_(0), bucket_n
     bucket_ = new hashBucket[bucket_num_];
     memset(bucket_, 0, sizeof(hashBucket) * bucket_num_);
     hash_seed_ = Random64{}();
+    this->memory_usage_ += bucket_num_ * sizeof(hashBucket);
 }
 
 template <typename Key, class Comparator>
@@ -40,8 +41,10 @@ void HashTable<Key, Comparator>::resize() {
     }
     assert(cnt == ele_num_);
     delete[] bucket_;
+    this->memory_usage_ -= bucket_num_ * sizeof(hashBucket);
     bucket_ = new_bucket;
     bucket_num_ = new_bucket_num;
+    this->memory_usage_ += bucket_num_ * sizeof(hashBucket);
 }
 
 template <typename Key, class Comparator>
@@ -63,6 +66,7 @@ bool HashTable<Key, Comparator>::Insert(const Key& key) {
     auto new_p = new hashNode{key, hash, nullptr};
     *ret = new_p;
     ++ele_num_;
+    this->memory_usage_ += sizeof(hashNode);
     if (bucket_num_ < ele_num_) {
         resize();
     }

@@ -20,7 +20,7 @@ private:
     const uint16_t maxLevel_;
     const uint16_t branchNum_;
     Comparator compare_;
-    std::atomic<int> cur_level_;   // 当前跳表的层数
+    std::atomic<int> cur_level_;
     SkipListNode* const head_;
     Random rand_;
 
