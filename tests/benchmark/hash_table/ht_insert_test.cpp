@@ -30,10 +30,12 @@ BENCHMARK_DEFINE_F(HTInsertTest, PureInsert)(benchmark::State& state) {
         for (int i = 0; i < size; ++i) {
             set->Insert(data[i]);
         }
-        state.counters["MemoryUsage"] = benchmark::Counter(
-                (double)set->memory_usage_ / 1024 / 1024
-        );
     }
+    state.counters["MemoryUsage"] = benchmark::Counter(
+            static_cast<double>(set->memory_usage_),
+            benchmark::Counter::kDefaults,
+            benchmark::Counter::kIs1024
+    );
 }
 
 BENCHMARK_REGISTER_F(HTInsertTest, PureInsert)
