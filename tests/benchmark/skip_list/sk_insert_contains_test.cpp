@@ -45,6 +45,7 @@ BENCHMARK_REGISTER_F(SKInsertContainsTest, MixedOperations)
                               {10000, 1000000, 5000000},
                               {50, 20, 10},
                       })
+        ->Iterations(10)
         ->ArgNames({"Size", "InsertRate"})
         ->Unit(benchmark::kMillisecond);
 

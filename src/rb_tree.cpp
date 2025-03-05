@@ -4,17 +4,14 @@
 #include "rb_tree.h"
 #include <algorithm>
 
-// 构造函数
 template <typename Key, class Comparator>
 RBTree<Key, Comparator>::RBTree() : root_(nullptr) {}
 
-// 析构函数
 template <typename Key, class Comparator>
 RBTree<Key, Comparator>::~RBTree() {
     destroy(root_);
 }
 
-// 递归销毁树
 template <typename Key, class Comparator>
 void RBTree<Key, Comparator>::destroy(Node* node) {
     if (node != nullptr) {
@@ -66,7 +63,6 @@ bool RBTree<Key, Comparator>::insertNode(const Key &k, Node* &n_node) {
     return true;
 }
 
-// 插入修复
 template <typename Key, class Comparator>
 void RBTree<Key, Comparator>::insertFixup(Node* z) {
     while (z->parent_ != nullptr && z->parent_->color_ == RED) {
@@ -107,7 +103,6 @@ void RBTree<Key, Comparator>::insertFixup(Node* z) {
     root_->color_ = BLACK;
 }
 
-// 左旋
 template <typename Key, class Comparator>
 void RBTree<Key, Comparator>::leftRotate(Node* x) {
     Node* y = x->right_;
@@ -127,7 +122,6 @@ void RBTree<Key, Comparator>::leftRotate(Node* x) {
     x->parent_ = y;
 }
 
-// 右旋
 template <typename Key, class Comparator>
 void RBTree<Key, Comparator>::rightRotate(Node* x) {
     Node* y = x->left_;
@@ -147,7 +141,6 @@ void RBTree<Key, Comparator>::rightRotate(Node* x) {
     x->parent_ = y;
 }
 
-// 查找最小节点
 template <typename Key, class Comparator>
 typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::minimum(Node* x) {
     while (x->left_ != nullptr) {
@@ -156,7 +149,6 @@ typename RBTree<Key, Comparator>::Node* RBTree<Key, Comparator>::minimum(Node* x
     return x;
 }
 
-// 节点替换
 template <typename Key, class Comparator>
 void RBTree<Key, Comparator>::transplant(Node* u, Node* v) {
     if (u->parent_ == nullptr) {

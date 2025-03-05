@@ -35,7 +35,6 @@ struct SkipList<Key, Comparator>::SkipListNode {
     }
 };
 
-// 构造函数
 template <typename Key, class Comparator>
 SkipList<Key, Comparator>::SkipList(uint16_t max_level, uint16_t branch_num)
     : maxLevel_(max_level), branchNum_(branch_num), cur_level_(1), head_(SkipListNode::NewNode(0, maxLevel_)) {
@@ -44,7 +43,6 @@ SkipList<Key, Comparator>::SkipList(uint16_t max_level, uint16_t branch_num)
     }
 }
 
-// 析构函数
 template <typename Key, class Comparator>
 SkipList<Key, Comparator>::~SkipList() {
     SkipListNode* p = head_;
@@ -88,7 +86,6 @@ SkipList<Key, Comparator>::upperBound(const Key &k, SkipListNode** prev) const {
     }
 }
 
-// 插入操作
 template <typename Key, class Comparator>
 bool SkipList<Key, Comparator>::Insert(const Key& k) {
     SkipListNode* prev[maxLevel_];
@@ -96,7 +93,6 @@ bool SkipList<Key, Comparator>::Insert(const Key& k) {
     auto p = upperBound(k, prev);
 
     if (p != nullptr && equal(p->k_, k)) {
-//        std::cerr << __func__ << ", SkipList cannot Insert duplicated key." << std::endl;
         return false;
     }
 
@@ -117,14 +113,12 @@ bool SkipList<Key, Comparator>::Insert(const Key& k) {
     return true;
 }
 
-// 查找操作
 template <typename Key, class Comparator>
 bool SkipList<Key, Comparator>::Contains(const Key& k) const {
     auto p = upperBound(k, nullptr);
     return p != nullptr && equal(p->k_, k);
 }
 
-// 删除操作
 template <typename Key, class Comparator>
 bool SkipList<Key, Comparator>::Remove(const Key& k) {
     SkipListNode* prev[maxLevel_];
@@ -139,19 +133,4 @@ bool SkipList<Key, Comparator>::Remove(const Key& k) {
     }
     delete p;
     return true;
-}
-#pragma clang diagnostic pop
-
-// 打印跳表
-template <typename Key, class Comparator>
-void SkipList<Key, Comparator>::Print() const {
-    for (int i = cur_level_; i >= 0; i--) {
-        SkipListNode* p = head_->next_[i];
-        std::cout << "Level " << i << ": ";
-        while (p) {
-            std::cout << p->k_ << " ";
-            p = p->next_[i];
-        }
-        std::cout << std::endl;
-    }
 }

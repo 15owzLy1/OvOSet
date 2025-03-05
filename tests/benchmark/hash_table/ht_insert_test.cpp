@@ -42,6 +42,7 @@ BENCHMARK_REGISTER_F(HTInsertTest, PureInsert)
         ->ArgsProduct({
                               {10000, 1000000, 5000000},
                       })
+        ->Iterations(10)
         ->ArgNames({"Size"})
         ->Unit(benchmark::kMillisecond);
 
