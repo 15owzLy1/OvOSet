@@ -38,7 +38,7 @@ struct SkipList<Key, Comparator>::SkipListNode {
 template <typename Key, class Comparator>
 SkipList<Key, Comparator>::SkipList(uint16_t max_level, uint16_t branch_num)
     : OvOSet<Key, Comparator>(), maxLevel_(max_level), branchNum_(branch_num),
-      cur_level_(1), head_(SkipListNode::NewNode(0, maxLevel_)) {
+      cur_level_(1), head_(SkipListNode::NewNode(Key(), maxLevel_)) {
     for (int i = 0; i < maxLevel_; ++i) {
         head_->SetNext(i, nullptr);
     }

@@ -54,5 +54,6 @@ public:
 template class SkipList<int, std::less<>>;
 template class SkipList<uint32_t, std::less<>>;
 template class SkipList<uint64_t, std::less<>>;
+template class SkipList<std::string, std::less<>>;
 
 #endif // SKIP_LIST_H
