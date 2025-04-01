@@ -15,3 +15,9 @@ target_link_libraries(BM_RBInsertContainsTest data_structures benchmark::benchma
 
 add_executable(BM_RBInsertTest rb_insert_test.cpp)
 target_link_libraries(BM_RBInsertTest data_structures benchmark::benchmark)
+
+add_executable(BM_RBRangeTest rb_range_test.cpp)
+target_link_libraries(BM_RBRangeTest data_structures benchmark::benchmark)
+
+add_executable(BM_RBMultiRangeTest rb_multi_range_test.cpp)
+target_link_libraries(BM_RBMultiRangeTest data_structures benchmark::benchmark)

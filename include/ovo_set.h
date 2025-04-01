@@ -14,10 +14,12 @@ using std::size_t;
 template <typename Key, class Comparator>
 class OvOSet {
 public:
+    OvOSet() : memory_usage_(0) {}
     virtual ~OvOSet() = default;
-    virtual bool Insert(const Key& key) = 0;
-    virtual bool Remove(const Key& key) = 0;
-    virtual bool Contains(const Key& key) const = 0;
+    virtual bool Insert(const Key &key) = 0;
+    virtual bool Remove(const Key &key) = 0;
+    virtual bool Contains(const Key &key) = 0;
+    virtual void GetRange(const Key &lower, const Key &upper, std::vector<Key>* result) = 0;
     uint64_t memory_usage_;
 };
 

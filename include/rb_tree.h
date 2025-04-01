@@ -26,6 +26,7 @@ private:
 
     Node* root_;
     Comparator compare_;
+    std::mutex mutex_;
 
     void leftRotate(Node* x);
     void rightRotate(Node* x);
@@ -47,7 +48,8 @@ public:
 
     bool Insert(const Key &key) override;
     bool Remove(const Key &key) override;
-    bool Contains(const Key &key) const override;
+    bool Contains(const Key &key) override;
+    void GetRange(const Key &lower, const Key &upper, std::vector<Key>* result) override;
 
 };
 

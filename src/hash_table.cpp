@@ -2,10 +2,12 @@
 // Created by Lddyss on 2025/1/30.
 //
 #include <cassert>
+#include <iostream>
 #include "hash_table.h"
 
 template <typename Key, class Comparator>
-HashTable<Key, Comparator>::HashTable(size_t bucket_num) : ele_num_(0), bucket_num_(bucket_num) {
+HashTable<Key, Comparator>::HashTable(size_t bucket_num)
+    : OvOSet<Key, Comparator>(), ele_num_(0), bucket_num_(bucket_num), mutex_() {
     bucket_ = new hashBucket[bucket_num_];
     memset(bucket_, 0, sizeof(hashBucket) * bucket_num_);
     hash_seed_ = Random64{}();
@@ -57,6 +59,7 @@ HashTable<Key, Comparator>::findPointer(const Key &key, const size_t hash) const
 
 template <typename Key, class Comparator>
 bool HashTable<Key, Comparator>::Insert(const Key& key) {
+    std::lock_guard l(mutex_);
     auto hash = getHash(key);
     auto ret = findPointer(key, hash);
     auto p = *ret;
@@ -75,6 +78,7 @@ bool HashTable<Key, Comparator>::Insert(const Key& key) {
 
 template <typename Key, class Comparator>
 bool HashTable<Key, Comparator>::Remove(const Key& key) {
+    std::lock_guard l(mutex_);
     auto hash = getHash(key);
     auto ret = findPointer(key, hash);
     auto p = *ret;
@@ -88,6 +92,29 @@ bool HashTable<Key, Comparator>::Remove(const Key& key) {
 }
 
 template <typename Key, class Comparator>
-bool HashTable<Key, Comparator>::Contains(const Key& key) const {
+bool HashTable<Key, Comparator>::Contains(const Key& key) {
+    std::lock_guard l(mutex_);
     return *findPointer(key, getHash(key)) != nullptr;
+}
+
+template <typename Key, class Comparator>
+void HashTable<Key, Comparator>::GetRange(const Key &lower, const Key &upper, std::vector<Key>* result) {
+    if (upper - lower > ele_num_ * 2) {
+        std::lock_guard l(mutex_);
+        for (size_t i = 0; i < bucket_num_; ++i) {
+            auto p = bucket_[i].head;
+            while (p != nullptr) {
+                if (!compare_(p->k_, lower) && compare_(p->k_, upper)) {
+                    result->push_back(p->k_);
+                }
+                p = p->next_;
+            }
+        }
+    } else {
+        for (Key i = lower; i <= upper; ++i) {
+            if (Contains(i)) {
+                result->push_back(i);
+            }
+        }
+    }
 }

@@ -5,10 +5,11 @@
 #include <algorithm>
 
 template <typename Key, class Comparator>
-RBTree<Key, Comparator>::RBTree() : root_(nullptr) {}
+RBTree<Key, Comparator>::RBTree() : OvOSet<Key, Comparator>(), root_(nullptr), mutex_() {}
 
 template <typename Key, class Comparator>
 RBTree<Key, Comparator>::~RBTree() {
+    std::lock_guard l(mutex_);
     destroy(root_);
 }
 
@@ -18,6 +19,7 @@ void RBTree<Key, Comparator>::destroy(Node* node) {
         destroy(node->left_);
         destroy(node->right_);
         delete node;
+        node = nullptr;
     }
 }
 
@@ -262,12 +264,14 @@ void RBTree<Key, Comparator>::deleteFixup(Node* x) {
 }
 
 template <typename Key, class Comparator>
-bool RBTree<Key, Comparator>::Contains(const Key &key) const {
+bool RBTree<Key, Comparator>::Contains(const Key &key) {
+    std::lock_guard l(mutex_);
     return findNode(key, nullptr);
 }
 
 template <typename Key, class Comparator>
 bool RBTree<Key, Comparator>::Insert(const Key& key) {
+    std::lock_guard l(mutex_);
     Node* n_node = nullptr;
     auto ret = insertNode(key, n_node);
     return ret;
@@ -275,5 +279,24 @@ bool RBTree<Key, Comparator>::Insert(const Key& key) {
 
 template <typename Key, class Comparator>
 bool RBTree<Key, Comparator>::Remove(const Key& key) {
+    std::lock_guard l(mutex_);
     return deleteNode(key);
+}
+
+template <typename Key, class Comparator>
+void RBTree<Key, Comparator>::GetRange(const Key &lower, const Key &upper, std::vector<Key>* result) {
+    std::lock_guard l(mutex_);
+    auto dfs = [this, lower, upper, &result] (auto self, Node* p) -> void {
+        if (p == nullptr) return;
+        if (!compare_(p->k_, lower)) {
+            self(self, p->left_);
+        }
+        if (!compare_(p->k_, lower) && compare_(p->k_, upper)) {
+            result->push_back(p->k_);
+        }
+        if (compare_(p->k_, upper)) {
+            self(self, p->right_);
+        }
+    };
+    dfs(dfs, root_);
 }

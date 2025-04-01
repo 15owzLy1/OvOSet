@@ -14,6 +14,13 @@ protected:
     void TearDown() override {
         delete rb;
     }
+    void RangeTestInit() {
+        rb->Insert(10);
+        rb->Insert(20);
+        rb->Insert(30);
+        rb->Insert(40);
+        rb->Insert(50);
+    }
     OvOSet<int, std::less<>>* rb;
 };
 
@@ -126,4 +133,70 @@ TEST_F(RBTreeTest, BoundaryTest) {
 
     EXPECT_FALSE(rb->Contains(std::numeric_limits<int>::min()));
     EXPECT_FALSE(rb->Contains(std::numeric_limits<int>::max()));
+}
+
+// 测试正常范围查询
+TEST_F(RBTreeTest, HandlesNormalRange) {
+    RangeTestInit();
+    std::vector<int> result_;
+    rb->GetRange(15, 45, &result_);
+    ASSERT_EQ(3, result_.size());
+    EXPECT_EQ(20, result_[0]);
+    EXPECT_EQ(30, result_[1]);
+    EXPECT_EQ(40, result_[2]);
+}
+
+// 测试精确边界匹配
+TEST_F(RBTreeTest, HandlesExactBoundaries) {
+    RangeTestInit();
+    std::vector<int> result_;
+    rb->GetRange(10, 51, &result_);
+    ASSERT_EQ(5, result_.size());
+    EXPECT_EQ(10, result_.front());
+    EXPECT_EQ(50, result_.back());
+}
+
+// 测试空结果集
+TEST_F(RBTreeTest, HandlesNoResults) {
+    RangeTestInit();
+    std::vector<int> result_;
+    rb->GetRange(60, 100, &result_);
+    EXPECT_TRUE(result_.empty());
+}
+
+// 测试单元素结果
+TEST_F(RBTreeTest, HandlesSingleElement) {
+    RangeTestInit();
+    std::vector<int> result_;
+    rb->GetRange(25, 35, &result_);
+    ASSERT_EQ(1, result_.size());
+    EXPECT_EQ(30, result_[0]);
+}
+
+// 测试无效范围（lower > upper）
+TEST_F(RBTreeTest, HandlesInvalidRange) {
+    RangeTestInit();
+    std::vector<int> result_;
+    rb->GetRange(50, 10, &result_);
+    EXPECT_TRUE(result_.empty()); // 或根据设计返回反向结果
+}
+
+// 测试空集合
+TEST_F(RBTreeTest, HandlesEmptySet) {
+    RangeTestInit();
+    std::vector<int> result_;
+    RBTree<int, std::less<>> empty_set;
+    std::vector<int> empty_result;
+    empty_set.GetRange(0, 100, &empty_result);
+    EXPECT_TRUE(empty_result.empty());
+}
+
+// 测试完全包含的情况
+TEST_F(RBTreeTest, HandlesFullContainment) {
+    RangeTestInit();
+    std::vector<int> result_;
+    rb->Insert(5);
+    rb->Insert(55);
+    rb->GetRange(10, 51, &result_);
+    ASSERT_EQ(5, result_.size()); // 应排除新增的 5 和 55
 }

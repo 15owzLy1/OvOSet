@@ -31,7 +31,7 @@ private:
     bool equal(const Key &i, const Key &j) const {
         return !compare_(i, j) && !compare_(j, i);
     }
-    SkipListNode* upperBound(const Key &k, SkipListNode** prev) const;
+    SkipListNode* lowerBound(const Key &k, SkipListNode** prev) const;
 
 public:
     explicit SkipList(uint16_t max_level = 12, uint16_t branch_num = 4);
@@ -42,9 +42,11 @@ public:
 
     bool Insert(const Key& key) override;
 
-    bool Contains(const Key& key) const override;
+    bool Contains(const Key& key) override;
 
     bool Remove(const Key& key) override;
+
+    void GetRange(const Key &lower, const Key &upper, std::vector<Key>* result) override;
 
     void Print() const;
 };

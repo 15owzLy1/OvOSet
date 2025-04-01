@@ -12,6 +12,13 @@ protected:
     void TearDown() override {
         delete sk;
     }
+    void RangeTestInit() {
+        sk->Insert(10);
+        sk->Insert(20);
+        sk->Insert(30);
+        sk->Insert(40);
+        sk->Insert(50);
+    }
     OvOSet<int, std::less<>>* sk;
 };
 
@@ -103,4 +110,70 @@ TEST_F(SkipListTest, InvalidOperations) {
     // 验证空跳表删除
     SkipList<int, std::less<>> empty_sk(12, 4);
     EXPECT_FALSE(empty_sk.Remove(0));
+}
+
+// 测试正常范围查询
+TEST_F(SkipListTest, HandlesNormalRange) {
+    RangeTestInit();
+    std::vector<int> result_;
+    sk->GetRange(15, 45, &result_);
+    ASSERT_EQ(3, result_.size());
+    EXPECT_EQ(20, result_[0]);
+    EXPECT_EQ(30, result_[1]);
+    EXPECT_EQ(40, result_[2]);
+}
+
+// 测试精确边界匹配
+TEST_F(SkipListTest, HandlesExactBoundaries) {
+    RangeTestInit();
+    std::vector<int> result_;
+    sk->GetRange(10, 51, &result_);
+    ASSERT_EQ(5, result_.size());
+    EXPECT_EQ(10, result_.front());
+    EXPECT_EQ(50, result_.back());
+}
+
+// 测试空结果集
+TEST_F(SkipListTest, HandlesNoResults) {
+    RangeTestInit();
+    std::vector<int> result_;
+    sk->GetRange(60, 100, &result_);
+    EXPECT_TRUE(result_.empty());
+}
+
+// 测试单元素结果
+TEST_F(SkipListTest, HandlesSingleElement) {
+    RangeTestInit();
+    std::vector<int> result_;
+    sk->GetRange(25, 35, &result_);
+    ASSERT_EQ(1, result_.size());
+    EXPECT_EQ(30, result_[0]);
+}
+
+// 测试无效范围（lower > upper）
+TEST_F(SkipListTest, HandlesInvalidRange) {
+    RangeTestInit();
+    std::vector<int> result_;
+    sk->GetRange(50, 10, &result_);
+    EXPECT_TRUE(result_.empty()); // 或根据设计返回反向结果
+}
+
+// 测试空集合
+TEST_F(SkipListTest, HandlesEmptySet) {
+    RangeTestInit();
+    std::vector<int> result_;
+    SkipList<int,std::less<>> empty_set;
+    std::vector<int> empty_result;
+    empty_set.GetRange(0, 100, &empty_result);
+    EXPECT_TRUE(empty_result.empty());
+}
+
+// 测试完全包含的情况
+TEST_F(SkipListTest, HandlesFullContainment) {
+    RangeTestInit();
+    std::vector<int> result_;
+    sk->Insert(5);
+    sk->Insert(55);
+    sk->GetRange(10, 51, &result_);
+    ASSERT_EQ(5, result_.size()); // 应排除新增的 5 和 55
 }

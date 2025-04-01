@@ -25,6 +25,7 @@ private:
     size_t ele_num_, bucket_num_, hash_seed_;
     Comparator compare_;
     hashBucket* bucket_;
+    std::mutex mutex_;
 
     bool equal(const Key &i, const Key &j) const {
         return !compare_(i, j) && !compare_(j, i);
@@ -37,7 +38,8 @@ public:
     explicit HashTable(size_t bucket_num = 128);
     bool Insert(const Key &key) override;
     bool Remove(const Key &key) override;
-    bool Contains(const Key &key) const override;
+    bool Contains(const Key &key) override;
+    void GetRange(const Key &lower, const Key &upper, std::vector<Key>* result) override;
 };
 
 template class HashTable<int, std::less<>>;

@@ -15,3 +15,9 @@ target_link_libraries(BM_HTInsertContainsTest data_structures benchmark::benchma
 
 add_executable(BM_HTInsertTest ht_insert_test.cpp)
 target_link_libraries(BM_HTInsertTest data_structures benchmark::benchmark)
+
+add_executable(BM_HTRangeTest ht_range_test.cpp)
+target_link_libraries(BM_HTRangeTest data_structures benchmark::benchmark)
+
+add_executable(BM_HTMultiRangeTest ht_Multi_range_test.cpp)
+target_link_libraries(BM_HTMultiRangeTest data_structures benchmark::benchmark)

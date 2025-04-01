@@ -15,3 +15,9 @@ target_link_libraries(BM_SKInsertContainsTest data_structures benchmark::benchma
 
 add_executable(BM_SKInsertTest sk_insert_test.cpp)
 target_link_libraries(BM_SKInsertTest data_structures benchmark::benchmark)
+
+add_executable(BM_SKRangeTest sk_range_test.cpp)
+target_link_libraries(BM_SKRangeTest data_structures benchmark::benchmark)
+
+add_executable(BM_SKMultiRangeTest sk_multi_range_test.cpp)
+target_link_libraries(BM_SKMultiRangeTest data_structures benchmark::benchmark)

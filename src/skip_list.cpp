@@ -37,7 +37,8 @@ struct SkipList<Key, Comparator>::SkipListNode {
 
 template <typename Key, class Comparator>
 SkipList<Key, Comparator>::SkipList(uint16_t max_level, uint16_t branch_num)
-    : maxLevel_(max_level), branchNum_(branch_num), cur_level_(1), head_(SkipListNode::NewNode(0, maxLevel_)) {
+    : OvOSet<Key, Comparator>(), maxLevel_(max_level), branchNum_(branch_num),
+      cur_level_(1), head_(SkipListNode::NewNode(0, maxLevel_)) {
     for (int i = 0; i < maxLevel_; ++i) {
         head_->SetNext(i, nullptr);
     }
@@ -66,7 +67,7 @@ int SkipList<Key, Comparator>::getRandomLevel() {
 
 template <typename Key, class Comparator>
 SkipList<Key, Comparator>::SkipListNode*
-SkipList<Key, Comparator>::upperBound(const Key &k, SkipListNode** prev) const {
+SkipList<Key, Comparator>::lowerBound(const Key &k, SkipListNode** prev) const {
     auto p = head_;
     auto l = getCurrentLevel() - 1;
     while (true) {
@@ -90,7 +91,7 @@ template <typename Key, class Comparator>
 bool SkipList<Key, Comparator>::Insert(const Key& k) {
     SkipListNode* prev[maxLevel_];
     SkipListNode* current = head_;
-    auto p = upperBound(k, prev);
+    auto p = lowerBound(k, prev);
 
     if (p != nullptr && equal(p->k_, k)) {
         return false;
@@ -114,15 +115,15 @@ bool SkipList<Key, Comparator>::Insert(const Key& k) {
 }
 
 template <typename Key, class Comparator>
-bool SkipList<Key, Comparator>::Contains(const Key& k) const {
-    auto p = upperBound(k, nullptr);
+bool SkipList<Key, Comparator>::Contains(const Key& k) {
+    auto p = lowerBound(k, nullptr);
     return p != nullptr && equal(p->k_, k);
 }
 
 template <typename Key, class Comparator>
 bool SkipList<Key, Comparator>::Remove(const Key& k) {
     SkipListNode* prev[maxLevel_];
-    auto p = upperBound(k, prev);
+    auto p = lowerBound(k, prev);
     if (p == nullptr) {
         return false;
     }
@@ -133,4 +134,13 @@ bool SkipList<Key, Comparator>::Remove(const Key& k) {
     }
     delete p;
     return true;
+}
+
+template <typename Key, class Comparator>
+void SkipList<Key, Comparator>::GetRange(const Key &lower, const Key &upper, std::vector<Key>* result) {
+    auto p = lowerBound(lower, nullptr);
+    while (p != nullptr && compare_(p->k_, upper)) {
+        result->push_back(p->k_);
+        p = p->Next(0);
+    }
 }
